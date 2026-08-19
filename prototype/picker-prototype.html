@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphify Viewer</title>
+<!-- PROTOTYPE — throwaway. Card-grid picker, catppuccin latte/mocha, sort/filter/date-range/3D depth.
+     Question: what should the graph picker look like? Not production code. -->
+<style>
+  /* animated depth needs registered custom properties (px / number) */
+  @property --float { syntax: '<length>'; initial-value: 0px; inherits: false; }
+  @property --boost { syntax: '<length>'; initial-value: 0px; inherits: false; }
+  @property --sc    { syntax: '<number>';  initial-value: 1;    inherits: false; }
+
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; margin: 0; }
+  a { color: inherit; }
+
+  /* ---------- palettes (WCAG-checked) ----------
+     latte: bg #eff1f5 / surface #fff ; text #4c4f69 (9.2:1) ; sub #5b5e78 (7.0:1)
+            muted #6d7089 (5.4:1 AA) ; sky #036cber... adjusted below ; green #208020-ish
+     mocha: text #cdd6f4 (12.9:1) ; sub #bac3de ; muted #a6adc8 (7:1+) */
+  html[data-theme="latte"] {
+    --bg: #eff1f5; --bg-alt: #dfe2ea; --surface: #ffffff; --card: #ffffff;
+    --text: #4c4f69; --sub: #5b5e78; --muted: #6d7089;
+    --border: #c4c8d4; --border-hover: #8b8fa5;
+    --accent: #1e66f5; --accent-text: #ffffff; --accent-visited: #1d5bb8;
+    --green: #1e7d40; --peach: #b45309; --mauve: #7c3aed; --sky: #0b6bcb;
+    --glow: rgba(30, 102, 245, .35);
+    --spot: rgba(30, 102, 245, .10);
+    --shadow-lift: 0 1px 2px rgba(76,79,105,.20);
+    --shadow-hover: 0 22px 44px rgba(76,79,105,.30);
+    --shadow-sel: 0 34px 80px rgba(76,79,105,.40);
+  }
+  html[data-theme="mocha"] {
+    --bg: #1e1e2e; --bg-alt: #181825; --surface: #313244; --card: #1e1e2e;
+    --text: #cdd6f4; --sub: #bac3de; --muted: #a6adc8;
+    --border: #45475a; --border-hover: #6c6f85;
+    --accent: #89b4fa; --accent-text: #1e1e2e; --accent-visited: #a8c8f8;
+    --green: #a6e3a1; --peach: #fab387; --mauve: #cba6f7; --sky: #8ec9ef;
+    --glow: rgba(137, 180, 250, .40);
+    --spot: rgba(137, 180, 250, .08);
+    --shadow-lift: 0 1px 2px rgba(0,0,0,.35);
+    --shadow-hover: 0 22px 44px rgba(0,0,0,.45);
+    --shadow-sel: 0 34px 80px rgba(0,0,0,.65);
+  }
+  body { font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    transition: background .25s, color .25s; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px; }
+
+  /* ---------- header ---------- */
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  h1 { font-size: 22px; letter-spacing: -.02em; }
+  .theme-toggle { margin-left: auto; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px;
+    font-size: 13px; cursor: pointer; transition: border-color .15s; }
+  .theme-toggle:hover { border-color: var(--border-hover); }
+  .sub { color: var(--sub); font-size: 13.5px; margin-bottom: 22px; }
+  .sub b { color: var(--text); font-weight: 600; }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; gap: 10px; margin-bottom: 26px; flex-wrap: wrap; align-items: center; }
+  .controls input[type="search"] { flex: 1; min-width: 200px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; padding: 9px 14px;
+    font-size: 14px; color: var(--text); outline: none; transition: border-color .15s; }
+  .controls input[type="search"]:focus { border-color: var(--accent); }
+  .controls input[type="search"]::placeholder { color: var(--muted); }
+  .seg { display: flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; }
+  .seg button { background: none; border: none; color: var(--sub); padding: 9px 13px;
+    font-size: 13px; cursor: pointer; transition: background .15s, color .15s; }
+  .seg button:hover { color: var(--text); }
+  .seg button.on { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .seg button.on::after { content: " " attr(data-arrow); }
+
+  /* ---------- calendar ---------- */
+  .cal-wrap { position: relative; }
+  .cal-btn { background: var(--surface); border: 1px solid var(--border); color: var(--sub);
+    border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer;
+    transition: border-color .15s, color .15s; white-space: nowrap; }
+  .cal-btn:hover, .cal-btn.open { border-color: var(--accent); color: var(--text); }
+  .cal-btn.has-range::after { content: " ✕"; color: var(--muted); }
+  .cal-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 50;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; box-shadow: var(--shadow-hover); width: max-content; }
+  .cal-pop[hidden] { display: none; }
+  .cal-title { font-size: 13px; font-weight: 650; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+  .cal-title .nav { background: none; border: 1px solid var(--border); color: var(--sub);
+    border-radius: 6px; width: 22px; height: 22px; cursor: pointer; line-height: 1; }
+  .cal-title .nav:hover { color: var(--text); border-color: var(--border-hover); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 30px); gap: 3px; }
+  .cal-grid .dow { font-size: 10px; color: var(--muted); text-align: center; padding-bottom: 4px; }
+  .cal-grid button { height: 28px; border-radius: 7px; border: none; background: none;
+    color: var(--sub); font-size: 12px; cursor: pointer; position: relative; }
+  .cal-grid button:hover:not(:disabled) { background: var(--bg-alt); color: var(--text); }
+  .cal-grid button:disabled { color: var(--border); cursor: default; }
+  .cal-grid button.in-range { background: var(--bg-alt); color: var(--text); border-radius: 0; }
+  .cal-grid button.range-edge { background: var(--accent); color: var(--accent-text); border-radius: 7px; }
+  .cal-grid button.has-graph::after { content: ""; position: absolute; bottom: 4px; left: 50%;
+    transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
+  .cal-grid button.range-edge.has-graph::after { background: var(--accent-text); }
+  .cal-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px; }
+  .cal-foot .lbl { font-size: 11px; color: var(--muted); }
+  .cal-foot button { background: none; border: none; color: var(--accent); font-size: 12px;
+    cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .cal-foot button:hover { background: var(--bg-alt); }
+
+  /* ---------- card grid: shared vanishing point ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px;
+    perspective: 1100px; perspective-origin: 50% 30%; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; grid-column: 1 / -1; }
+
+  .card { position: relative; background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; cursor: pointer;
+    /* z depth = base per-card drift + idle float + hover/select boost, all in px */
+    transform: translateZ(calc(var(--zbase, 0px) + var(--float) + var(--boost)))
+               rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--sc));
+    animation: float var(--fdur, 7s) ease-in-out var(--fdel, 0s) infinite alternate;
+    transition: --boost .35s cubic-bezier(.2,.8,.3,1.15), --sc .35s cubic-bezier(.2,.8,.3,1.15),
+                border-color .3s, box-shadow .35s, filter .35s, opacity .35s;
+    box-shadow: var(--shadow-lift); will-change: transform; }
+  @keyframes float { from { --float: 0px; } to { --float: var(--famp, 10px); } }
+
+  .card::before { /* border glow */
+    content: ""; position: absolute; inset: -1px; border-radius: 15px; z-index: -1;
+    opacity: 0; transition: opacity .3s;
+    box-shadow: 0 0 0 1px var(--glow), 0 0 28px var(--glow); }
+  .card::after { /* pointer spotlight */
+    content: ""; position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+    opacity: 0; transition: opacity .25s;
+    background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), var(--spot), transparent 65%); }
+
+  .card:hover, .card:focus-visible { --boost: 36px; border-color: var(--border-hover);
+    box-shadow: var(--shadow-hover); outline: none; }
+  .card:hover::before, .card:focus-visible::before { opacity: 1; }
+  .card:hover::after { opacity: 1; }
+
+  /* selected: shoved far down the z-axis, bigger, above everything — stays for review */
+  .card.selected { --boost: 96px; --sc: 1.16; z-index: 10;
+    border-color: var(--accent); box-shadow: var(--shadow-sel),
+      0 0 0 1px var(--glow), 0 0 34px var(--glow); }
+  .card.selected::before { opacity: 1; }
+  .grid.has-sel .card:not(.selected) { --boost: -26px; filter: brightness(.82) saturate(.85); opacity: .78; }
+
+  .card.shaking { animation: shake .42s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes shake {
+    0%, 100% { translate: 0 0; rotate: 0deg; }
+    15% { translate: -9px 0; rotate: -1.1deg; }
+    30% { translate: 8px 0; rotate: .9deg; }
+    45% { translate: -6px 0; rotate: -.7deg; }
+    60% { translate: 5px 0; rotate: .5deg; }
+    75% { translate: -3px 0; rotate: -.25deg; }
+  }
+
+  .card .tag { font-size: 15px; font-weight: 650; letter-spacing: -.01em; margin-bottom: 10px; }
+  .card .count { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .card .count.small { font-size: 26px; }
+  .card .count small { font-size: 13px; font-weight: 400; color: var(--sub); margin-left: 6px; letter-spacing: 0; }
+  .card .count .edges { color: var(--sky); }
+  .card .meta { font-size: 12px; margin: 8px 0 14px; font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  .card .meta .path { color: var(--muted); }
+  .card .meta .added { color: var(--green); }
+  .card .bar { height: 3px; border-radius: 2px; background: var(--bg-alt); margin-bottom: 14px; overflow: hidden; }
+  .card .bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent);
+    transition: width .4s cubic-bezier(.2,.7,.3,1); }
+  .card .bar.warm i { background: var(--peach); }
+  .card .bar.cool i { background: var(--sky); }
+
+  .art-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .art-links a { font-size: 12px; padding: 5px 11px; border: 1px solid var(--border);
+    background: var(--surface); border-radius: 999px; text-decoration: none; color: var(--sub);
+    transition: border-color .15s, color .15s; }
+  .art-links a:hover { border-color: var(--accent); color: var(--accent); }
+  .card.selected .art-links a { border-color: var(--border-hover); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
+    .card.shaking { animation: none; }
+    .card, .card:hover, .card.selected { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Graphify</h1>
+    <button class="theme-toggle" id="theme">◑ theme</button>
+  </header>
+  <div class="sub" id="subline"></div>
+
+  <div class="controls">
+    <input type="search" id="q" placeholder="filter by tag or path… (e.g. infra, spoke, hermes)" aria-label="filter graphs">
+    <div class="seg" role="group" aria-label="sort">
+      <button data-sort="nodes" class="on">nodes</button>
+      <button data-sort="alpha">a–z</button>
+      <button data-sort="recency">recent</button>
+    </div>
+    <div class="cal-wrap">
+      <button class="cal-btn" id="calBtn" aria-haspopup="dialog" aria-expanded="false">added-date range</button>
+      <div class="cal-pop" id="calPop" role="dialog" aria-label="filter by added date" hidden>
+        <div class="cal-title">
+          <button class="nav" id="calPrev" aria-label="previous month">‹</button>
+          <span id="calMonth"></span>
+          <button class="nav" id="calNext" aria-label="next month">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-foot">
+          <span class="lbl" id="calLbl">no range — all dates</span>
+          <div><button id="calToday">today</button><button id="calClear">clear</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+// Real data snapshot from ~/.graphify/global-manifest.json (2026-08-19)
+const REPOS = [
+  { tag: "s-a-c", path: "~", nodes: 711, edges: 1017, added: "2026-08-19" },
+  { tag: "agent-skills", path: "~/Projects/agent-skills", nodes: 20, edges: 18, added: "2026-08-19" },
+  { tag: "caddy", path: "~/infra/caddy", nodes: 3, edges: 0, added: "2026-08-19" },
+  { tag: "control-plane", path: "~/infra/control-plane", nodes: 20, edges: 17, added: "2026-08-19" },
+  { tag: "docs-site", path: "~/infra/docs-site", nodes: 236, edges: 221, added: "2026-08-19" },
+  { tag: "hermes-agent", path: "~/infra/hermes-agent", nodes: 22, edges: 21, added: "2026-08-19" },
+  { tag: "infisical", path: "~/infra/infisical", nodes: 2, edges: 1, added: "2026-08-19" },
+  { tag: "odysseus", path: "~/infra/odysseus", nodes: 13692, edges: 30103, added: "2026-08-19" },
+  { tag: "samples-20260717", path: "~/Herd/samples-20260717", nodes: 7552, edges: 21849, added: "2026-08-19" },
+  { tag: "shared", path: "~/infra/shared", nodes: 52, edges: 89, added: "2026-08-19" },
+  { tag: "siyuan", path: "~/infra/siyuan", nodes: 4, edges: 2, added: "2026-08-19" },
+  { tag: "the-hub--spoke", path: "~/Projects/the-hub--spoke", nodes: 6889, edges: 17525, added: "2026-08-19" },
+];
+const MAX = Math.max(...REPOS.map(r => r.nodes));
+const fmt = n => n.toLocaleString("en");
+const ARTIFACTS = ["graph.html", "GRAPH_TREE.html", "GRAPH_REPORT.md"];
+const artHref = (tag, name) => `#/${tag}/${name}`; // placeholder — real service resolves per-tag
+const bucket = r => r.nodes > 1000 ? "warm" : r.nodes > 100 ? "" : "cool";
+
+const state = { sort: "nodes", dir: 1, q: "", from: null, to: null }; // date range filter
+
+function render() {
+  const q = state.q.toLowerCase();
+  const inRange = r => !state.from || !state.to ||
+    (r.added >= state.from && r.added <= state.to);
+  let rows = REPOS.filter(r =>
+    (!q || r.tag.toLowerCase().includes(q) || r.path.toLowerCase().includes(q)) && inRange(r));
+  const cmp = {
+    nodes: (a, b) => a.nodes - b.nodes || a.tag.localeCompare(b.tag),
+    alpha: (a, b) => a.tag.localeCompare(b.tag),
+    recency: (a, b) => a.added.localeCompare(b.added) || a.tag.localeCompare(b.tag),
+  }[state.sort];
+  rows.sort((a, b) => cmp(a, b) * state.dir);
+
+  const total = rows.reduce((s, r) => s + r.nodes, 0);
+  document.getElementById("subline").innerHTML =
+    `<b>${rows.length}</b> of ${REPOS.length} graphs · <b>${fmt(total)}</b> nodes · nightly refresh 02:30`;
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = rows.length ? rows.map((r, i) => {
+    const zbase = (i % 4) * 3, fdur = 6 + (i % 3) * 1.3, fdel = (i * .37) % 4, famp = 6 + (i % 5) * 2.2;
+    return `
+    <div class="card" tabindex="0" data-tag="${r.tag}"
+         style="--zbase:${zbase}px; --fdur:${fdur}s; --fdel:${fdel}s; --famp:${famp}px">
+      <div class="tag">${r.tag}</div>
+      <div class="count ${r.nodes < 1000 ? "small" : ""}">${fmt(r.nodes)}
+        <small>nodes · <span class="edges">${fmt(r.edges)} edges</span></small></div>
+      <div class="meta"><span class="path">${r.path}</span> · <span class="added">${r.added}</span></div>
+      <div class="bar ${bucket(r)}"><i style="width:${Math.max(2, Math.round(r.nodes / MAX * 100))}%"></i></div>
+      <div class="art-links">${ARTIFACTS.map(a =>
+        `<a href="${artHref(r.tag, a)}" tabindex="-1">${a.replace(/\.html?$|\.md$/, "").replace("GRAPH_", "")}</a>`).join("")}</div>
+    </div>`;
+  }).join("")
+    : `<div class="empty">no graphs match the current filters</div>`;
+
+  grid.querySelectorAll(".card").forEach(card => wire(card));
+}
+
+function wire(card) {
+  const MAXTILT = 6;
+  card.addEventListener("pointermove", e => {
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    card.style.setProperty("--ry", ((px - .5) * 2 * MAXTILT).toFixed(2) + "deg");
+    card.style.setProperty("--rx", ((.5 - py) * 2 * MAXTILT).toFixed(2) + "deg");
+    card.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+    card.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+  });
+  card.addEventListener("pointerleave", () => {
+    card.style.setProperty("--rx", "0deg");
+    card.style.setProperty("--ry", "0deg");
+  });
+
+  card.addEventListener("click", e => {
+    if (e.target.closest("a")) return;
+    const grid = document.getElementById("grid");
+    const wasSel = card.classList.contains("selected");
+    grid.querySelectorAll(".card.selected").forEach(c => c.classList.remove("selected"));
+    grid.classList.add("has-sel");
+    if (wasSel) return;
+    card.classList.add("selected");
+    card.classList.remove("shaking"); void card.offsetWidth;
+    card.classList.add("shaking");
+    // no default link — selected card stays magnified for review; chips navigate
+  });
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest(".card") || e.target.closest(".controls")) return;
+  document.getElementById("grid").classList.remove("has-sel");
+  document.querySelectorAll(".card.selected").forEach(c => c.classList.remove("selected"));
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    document.getElementById("grid").classList.remove("has-sel");
+    document.querySelectorAll(".card.selected").forEach(c => c.classList.remove("selected"));
+    closeCal();
+  }
+});
+
+/* ---------- calendar (spans dates of visible cards) ---------- */
+const calPop = document.getElementById("calPop");
+const calBtn = document.getElementById("calBtn");
+let calMonth = null;   // "YYYY-MM" being viewed
+let pickAnchor = null; // first click of a range
+
+const datesOfVisible = () => {
+  const vis = REPOS.filter(r => { // "visible" = text-filtered (calendar drives its own filter)
+    const q = state.q.toLowerCase();
+    return !q || r.tag.toLowerCase().includes(q) || r.path.toLowerCase().includes(q);
+  });
+  return vis.map(r => r.added).sort();
+};
+
+function isoOf(d) { // Date -> "YYYY-MM-DD" in local time
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function drawCal() {
+  const dates = datesOfVisible();
+  const minD = dates[0] || isoOf(new Date());
+  const maxD = dates[dates.length - 1] || minD;
+  if (!calMonth) calMonth = minD.slice(0, 7);
+  const [y, m] = calMonth.split("-").map(Number);
+  document.getElementById("calMonth").textContent =
+    new Date(y, m - 1, 1).toLocaleDateString("en", { month: "long", year: "numeric" });
+
+  const has = new Set(dates);
+  const first = new Date(y, m - 1, 1);
+  const startPad = (first.getDay() + 6) % 7; // Monday-first
+  const days = new Date(y, m, 0).getDate();
+
+  const cells = ["M", "T", "W", "T", "F", "S", "S"].map(d => `<span class="dow">${d}</span>`).join("");
+  let html = cells;
+  for (let i = 0; i < startPad; i++) html += `<span></span>`;
+  for (let d = 1; d <= days; d++) {
+    const iso = `${calMonth}-${String(d).padStart(2, "0")}`;
+    const inSpan = iso >= minD && iso <= maxD;
+    const inR = state.from && state.to && iso >= state.from && iso <= state.to;
+    const edge = iso === state.from || iso === state.to;
+    html += `<button data-iso="${iso}" ${inSpan ? "" : "disabled"}
+      class="${edge ? "range-edge" : inR ? "in-range" : ""} ${has.has(iso) ? "has-graph" : ""}">${d}</button>`;
+  }
+  document.getElementById("calGrid").innerHTML = html;
+  document.getElementById("calGrid").querySelectorAll("button[data-iso]").forEach(b =>
+    b.addEventListener("click", () => onCalPick(b.dataset.iso)));
+  document.getElementById("calLbl").textContent = state.from && state.to
+    ? `${state.from} → ${state.to}` : "no range — all dates";
+}
+
+function onCalPick(iso) {
+  if (!pickAnchor) { pickAnchor = iso; state.from = state.to = iso; }
+  else {
+    state.from = Math.min(pickAnchor, iso);
+    state.to = Math.max(pickAnchor, iso);
+    pickAnchor = null;
+  }
+  calBtn.classList.add("has-range");
+  drawCal(); render();
+}
+
+function openCal() {
+  calPop.hidden = false; calBtn.classList.add("open"); calBtn.setAttribute("aria-expanded", "true");
+  calMonth = null; pickAnchor = null; drawCal();
+}
+function closeCal() {
+  calPop.hidden = true; calBtn.classList.remove("open"); calBtn.setAttribute("aria-expanded", "false");
+}
+calBtn.addEventListener("click", e => { e.stopPropagation(); calPop.hidden ? openCal() : closeCal(); });
+calPop.addEventListener("click", e => e.stopPropagation());
+document.getElementById("calPrev").addEventListener("click", () => {
+  const [y, m] = calMonth.split("-").map(Number);
+  calMonth = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`; drawCal();
+});
+document.getElementById("calNext").addEventListener("click", () => {
+  const [y, m] = calMonth.split("-").map(Number);
+  calMonth = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`; drawCal();
+});
+document.getElementById("calToday").addEventListener("click", () => {
+  const now = new Date(); calMonth = isoOf(now).slice(0, 7); pickAnchor = null; drawCal();
+});
+document.getElementById("calClear").addEventListener("click", () => {
+  state.from = state.to = null; pickAnchor = null;
+  calBtn.classList.remove("has-range"); drawCal(); render();
+});
+
+/* theme */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  document.getElementById("theme").textContent = t === "mocha" ? "☀ latte" : "☾ mocha";
+  try { localStorage.setItem("gv-theme", t); } catch {}
+}
+(function initTheme() {
+  let t = null;
+  try { t = localStorage.getItem("gv-theme"); } catch {}
+  if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "mocha" : "latte";
+  applyTheme(t);
+})();
+document.getElementById("theme").addEventListener("click", () =>
+  applyTheme(document.documentElement.dataset.theme === "mocha" ? "latte" : "mocha"));
+
+/* controls: first click on a sort = ascending; clicking the active one toggles */
+const segButtons = document.querySelectorAll(".seg button[data-sort]");
+function syncSortUI() {
+  segButtons.forEach(b => {
+    const on = b.dataset.sort === state.sort;
+    b.classList.toggle("on", on);
+    b.dataset.arrow = state.dir === 1 ? "↑" : "↓";
+  });
+}
+segButtons.forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.sort === state.sort) state.dir *= -1;
+  else { state.sort = b.dataset.sort; state.dir = 1; }
+  syncSortUI(); render();
+}));
+document.getElementById("q").addEventListener("input", e => {
+  state.q = e.target.value; render(); if (!calPop.hidden) drawCal();
+});
+
+syncSortUI();
+render();
+</script>
+</body>
+</html>
