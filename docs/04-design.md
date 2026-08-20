@@ -15,7 +15,7 @@ status: stable
   </summary>
 
 - [1. 🏗 Architecture](#1--architecture)
-- [2. ⚖️ Decisions](#2-️-decisions)
+- [2. 🧭 Decisions](#2--decisions)
 - [3. 🌊 Data flow](#3--data-flow)
 - [4. 🧱 Boundaries](#4--boundaries)
 
