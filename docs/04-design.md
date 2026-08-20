@@ -38,7 +38,7 @@ browser ── HTTPS ── central Caddy ── HTTP ── Bun server (127.0.0
                                                 + each repo's graphify-out/
 ```
 
-## 2. ⚖️ Decisions
+## 2. 🧭 Decisions
 
 - **Bun, zero dependencies.** The workspace already runs Bun; one file with
   `Bun.serve` avoids a package.json, a lockfile, and a build step.
