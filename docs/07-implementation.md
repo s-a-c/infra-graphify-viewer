@@ -86,4 +86,4 @@ reads serve the HTML artifacts as-is with their MIME types.
 - Docs-site integration: see [98-index.md](98-index.md) and the home
   workspace's docs-to-docs-site flow.
 
-[←](05-operation.md) | [↑](#graphify-viewer-implementation) | [→](98-index.md)
+[←](08-operation.md) | [↑](#graphify-viewer-implementation) | [→](98-index.md)

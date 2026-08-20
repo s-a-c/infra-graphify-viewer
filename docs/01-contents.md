@@ -37,13 +37,13 @@ Caddy.
 1. [Spec](02-spec.md) — what the viewer is and why.
 2. [Design](04-design.md) — the shape of the solution and its boundaries.
 3. [Implementation](07-implementation.md) — files, endpoints, and how data flows.
-4. [Operation](05-operation.md) — running, refreshing, and troubleshooting.
+4. [Operation](08-operation.md) — running, refreshing, and troubleshooting.
 
 ## 3. 📁 Children
 
 - [02-spec.md](02-spec.md) — the viewer's purpose, scope, and user-visible behavior.
 - [04-design.md](04-design.md) — architecture and the decisions behind it.
-- [05-operation.md](05-operation.md) — LaunchAgent, Caddy route, refresh loop, runbooks.
+- [08-operation.md](08-operation.md) — LaunchAgent, Caddy route, refresh loop, runbooks.
 - [07-implementation.md](07-implementation.md) — concrete file layout, endpoints, artifact resolution.
 - [98-index.md](98-index.md) — semantic index and glossary.
 
