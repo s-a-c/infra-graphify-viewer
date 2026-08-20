@@ -47,4 +47,4 @@ Caddy.
 - [07-implementation.md](07-implementation.md) — concrete file layout, endpoints, artifact resolution.
 - [98-index.md](98-index.md) — semantic index and glossary.
 
-[←](../README.md) | [↑](#graphify-viewer-docs-contents) | [→](02-spec.md)
+[↑](#graphify-viewer-docs-contents) | [→](02-spec.md)

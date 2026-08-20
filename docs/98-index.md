@@ -54,4 +54,4 @@ status: stable
 - **tag** — a repo's identity in the global store (e.g. `odysseus`, `s-a-c`); doubles as the URL segment in `/g/<tag>/…`.
 - **wayfinder map** — the planning epic ("Rebuild global graphify store, ship centralized viewer") that specified and tracked this effort.
 
-[←](07-implementation.md) | [↑](#graphify-viewer-index) | [→](../README.md)
+[←](07-implementation.md) | [↑](#graphify-viewer-index) | [→](01-contents.md)
