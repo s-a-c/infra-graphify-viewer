@@ -2,7 +2,7 @@
 type: index
 title: Graphify Viewer index
 description: Semantic index and glossary for the graphify-viewer documentation
-tags: [graphify, viewer, index]
+tags: \[graphify, viewer, index\]
 timestamp: 2026-08-20
 provenance: agent
 status: stable
@@ -14,8 +14,8 @@ status: stable
     Expand for Table of Contents
   </summary>
 
-- [1. Topic index](#1--topic-index)
-- [2. Glossary](#2--glossary)
+- [1. 🧭 Topic index](#1--topic-index)
+- [2. 📖 Glossary](#2--glossary)
 
 </details>
 

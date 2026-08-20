@@ -2,7 +2,7 @@
 type: playbook
 title: Graphify Viewer operation
 description: Running, refreshing, and troubleshooting the graphify viewer service
-tags: [graphify, viewer, operations, launchagent, caddy]
+tags: \[graphify, viewer, operations, launchagent, caddy\]
 timestamp: 2026-08-20
 provenance: agent
 status: stable
@@ -14,12 +14,12 @@ status: stable
     Expand for Table of Contents
   </summary>
 
-- [1. Access](#1--access)
-- [2. Service lifecycle](#2--service-lifecycle)
-- [3. Refresh loop](#3--refresh-loop)
-- [4. Adding a graph](#4--adding-a-graph)
-- [5. Troubleshooting](#5--troubleshooting)
-- [6. Logs and state](#6--logs-and-state)
+- [1. 🌐 Access](#1--access)
+- [2. 🔌 Service lifecycle](#2--service-lifecycle)
+- [3. 🔄 Refresh loop](#3--refresh-loop)
+- [4. ➕ Adding a graph](#4--adding-a-graph)
+- [5. 🔧 Troubleshooting](#5--troubleshooting)
+- [6. 📋 Logs and state](#6--logs-and-state)
 
 </details>
 
@@ -33,14 +33,12 @@ CA in the macOS Keychain. Direct loopback: `http://127.0.0.1:4322/`.
 
 ## 2. 🔌 Service lifecycle
 
-The LaunchAgent `com.s-a-c.graphify-viewer` (chezmoi template
-`private_Library/LaunchAgents/com.s-a-c.graphify-viewer.plist.tmpl`) runs
-`~/.local/bin/launch-graphify-viewer.sh` with `RunAtLoad` and `KeepAlive`.
+The LaunchAgent `com.s-a-c.graphify-viewer` (chezmoi template `private_Library/LaunchAgents/com.s-a-c.graphify-viewer.plist.tmpl`) runs `~/.local/bin/launch-graphify-viewer.sh` with `RunAtLoad` and `KeepAlive`.
 
 ```bash
-launchctl print gui/$(id -u)/com.s-a-c.graphify-viewer   # state
+launchctl print gui/$(id -u)/com.s-a-c.graphify-viewer          # state
 launchctl kickstart -k gui/$(id -u)/com.s-a-c.graphify-viewer   # restart
-curl -s http://127.0.0.1:4322/healthz                    # {"ok":true,"graphs":12}
+curl -s http://127.0.0.1:4322/healthz                           # {"ok":true,"graphs":12}
 ```
 
 Code changes: edit `~/infra/graphify-viewer/server.js` (or `public.*`),
@@ -49,9 +47,10 @@ commit in jj, then kickstart the agent.
 ## 3. 🔄 Refresh loop
 
 The store refreshes nightly at 02:30 via `com.s-a-c.graphify-refresh`
-(`~/infra/shared/scripts/graphify-refresh.sh`; incremental, per-repo
-isolation). The viewer needs no restart after a refresh — it reads the
-manifest per request. On-demand full rebuild:
+(`~/infra/shared/scripts/graphify-refresh.sh`;
+- incremental, per-repo isolation).
+The viewer needs no restart after a refresh
+— it reads the manifest per request. On-demand full rebuild:
 
 ```bash
 ~/infra/shared/scripts/graphify-refresh.sh --force
@@ -61,9 +60,9 @@ manifest per request. On-demand full rebuild:
 
 1. `graphify extract <repo>` (add `--code-only` for config stacks).
 2. `graphify global add <repo>/graphify-out/graph.json --as <tag>`.
-3. Generate artifacts if missing: `graphify cluster-only <repo>` and
-   `graphify tree <repo>` (graphs over 5,000 nodes need
-   `GRAPHIFY_VIZ_NODE_LIMIT=20000` for `graph.html`).
+3. Generate artifacts if missing:
+  - `graphify cluster-only <repo>` and `graphify tree <repo>`
+    - (graphs over 5,000 nodes need `GRAPHIFY_VIZ_NODE_LIMIT=20000` for `graph.html`).
 4. Reload the picker; the new card appears.
 
 ## 5. 🔧 Troubleshooting

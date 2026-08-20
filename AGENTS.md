@@ -1,9 +1,9 @@
 ---
 trigger: always_on
-title: "# infra-graphify-viewer Agent Instructions"
+title: "infra-graphify-viewer Agent Instructions"
 description: "Agent contract for the graphify viewer stack: a Bun HTTP service exposing the global graphify store via central Caddy."
 type: spec
-tags: [ai, agents, contract, infra]
+tags: \[ai, agents, contract, infra\]
 created: 2026-08-19
 updated: 2026-08-19
 ---

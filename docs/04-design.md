@@ -2,7 +2,7 @@
 type: concept
 title: Graphify Viewer design
 description: Architecture and decisions behind the Bun-based graphify graph viewer
-tags: [graphify, viewer, design, caddy]
+tags: \[graphify, viewer, design, caddy\]
 timestamp: 2026-08-20
 provenance: agent
 status: stable
@@ -14,10 +14,10 @@ status: stable
     Expand for Table of Contents
   </summary>
 
-- [1. Architecture](#1--architecture)
-- [2. Decisions](#2--decisions)
-- [3. Data flow](#3--data-flow)
-- [4. Boundaries](#4--boundaries)
+- [1. 🏗 Architecture](#1--architecture)
+- [2. ⚖️ Decisions](#2-️-decisions)
+- [3. 🌊 Data flow](#3--data-flow)
+- [4. 🧱 Boundaries](#4--boundaries)
 
 </details>
 
@@ -27,17 +27,15 @@ status: stable
 
 A single Bun HTTP service (`server.js`, zero npm dependencies) renders the
 picker server-side and serves three kinds of routes. It runs on
-`127.0.0.1:4322` under a KeepAlive LaunchAgent; central Caddy terminates TLS
-and proxies `graphify.stands-macbook-pro.local` to it. Styling and client
-behavior live in `public.css` and `public.js`, inlined into the served page.
+`127.0.0.1:4322` under a KeepAlive LaunchAgent; central Caddy terminates TLS and proxies `graphify.stands-macbook-pro.local` to it. Styling and client behavior live in `public.css` and `public.js`, inlined into the served page.
 
 ```text
-browser ──HTTPS── central Caddy ──HTTP── Bun server (127.0.0.1:4322)
-                                                 ├── /            picker (SSR)
-                                                 ├── /g/<tag>/<a> artifact file
-                                                 ├── /healthz     JSON status
-                                                 └── reads ~/.graphify/global-manifest.json
-                                                     + each repo's graphify-out/
+browser ── HTTPS ── central Caddy ── HTTP ── Bun server (127.0.0.1:4322)
+                                            ├── /            picker (SSR)
+                                            ├── /g/<tag>/<a> artifact file
+                                            ├── /healthz     JSON status
+                                            └── reads ~/.graphify/global-manifest.json
+                                                + each repo's graphify-out/
 ```
 
 ## 2. ⚖️ Decisions
@@ -75,9 +73,9 @@ browser ──HTTPS── central Caddy ──HTTP── Bun server (127.0.0.1:4
 
 ## 4. 🧱 Boundaries
 
-The viewer is read-only over the store and the repos' `graphify-out/`
-directories. It does not extract, merge, or modify graphs; the graphify CLI
-and the refresh script own that side. It listens on loopback only; Caddy is
-the sole TLS boundary.
+The viewer is read-only over the store and the repos' `graphify-out/` directories.
+It does not extract, merge, or modify graphs;
+ the graphify CLI and the refresh script own that side.
+It listens on loopback only; Caddy is the sole TLS boundary.
 
 [←](02-spec.md) | [↑](#graphify-viewer-design) | [→](08-operation.md)

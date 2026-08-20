@@ -2,7 +2,7 @@
 type: reference
 title: Graphify Viewer implementation
 description: File layout, endpoints, and artifact resolution in the graphify viewer
-tags: [graphify, viewer, implementation, bun]
+tags: \[graphify, viewer, implementation, bun\]
 timestamp: 2026-08-20
 provenance: agent
 status: stable
@@ -14,11 +14,11 @@ status: stable
     Expand for Table of Contents
   </summary>
 
-- [1. Repository layout](#1--repository-layout)
-- [2. Endpoints](#2--endpoints)
-- [3. Picker rendering](#3--picker-rendering)
-- [4. Artifact resolution](#4--artifact-resolution)
-- [5. Registration surface](#5--registration-surface)
+- [1. 📁 Repository layout](#1--repository-layout)
+- [2. 🛣 Endpoints](#2--endpoints)
+- [3. 🎨 Picker rendering](#3--picker-rendering)
+- [4. 🔗 Artifact resolution](#4--artifact-resolution)
+- [5. 🧩 Registration surface](#5--registration-surface)
 
 </details>
 
@@ -28,26 +28,26 @@ status: stable
 
 ```text
 infra/graphify-viewer/
-├── AGENTS.md               # scope contract (reads store, never writes)
-├── README.md               # repo pointer
-├── server.js               # Bun HTTP service (entrypoint)
-├── public.css              # picker styles (catppuccin latte/mocha, 3D cards)
-├── public.js               # picker behavior (sort/filter/calendar/theme)
+├── AGENTS.md                   # scope contract (reads store, never writes)
+├── README.md                   # repo pointer
+├── server.js                   # Bun HTTP service (entrypoint)
+├── public.css                  # picker styles (catppuccin latte/mocha, 3D cards)
+├── public.js                   # picker behavior (sort/filter/calendar/theme)
 ├── prototype/
 │   └── picker-prototype.html   # accepted prototype (primary source)
-└── docs/                   # this documentation tree
+└── docs/                       # this documentation tree
 ```
 
 ## 2. 🛣 Endpoints
 
-| Route                    | Method | Response                                             |
-| ------------------------ | ------ | ---------------------------------------------------- |
-| `/`                      | GET    | Picker page (server-rendered, `no-store`)            |
-| `/healthz`               | GET    | `{"ok":true,"graphs":N}`                             |
-| `/g/<tag>/graph`         | GET    | That repo's `graphify-out/graph.html`                |
-| `/g/<tag>/tree`          | GET    | That repo's `graphify-out/GRAPH_TREE.html`           |
-| `/g/<tag>/report`        | GET    | `GRAPH_REPORT.md` wrapped in a minimal dark HTML pre |
-| anything else            | any    | 404                                                  |
+| Route             | Method | Response                                             |
+| ----------------- | ------ | ---------------------------------------------------- |
+| `/`               | GET    | Picker page (server-rendered, `no-store`)            |
+| `/healthz`        | GET    | `{"ok":true,"graphs":N}`                             |
+| `/g/<tag>/graph`  | GET    | That repo's `graphify-out/graph.html`                |
+| `/g/<tag>/tree`   | GET    | That repo's `graphify-out/GRAPH_TREE.html`           |
+| `/g/<tag>/report` | GET    | `GRAPH_REPORT.md` wrapped in a minimal dark HTML pre |
+| anything else     | any    | 404                                                  |
 
 Environment: `GRAPHIFY_VIEWER_PORT` (default `4322`); binds `127.0.0.1` only.
 

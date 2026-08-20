@@ -2,7 +2,7 @@
 type: contents
 title: Graphify Viewer docs contents
 description: Structural contents of the graphify-viewer documentation tree
-tags: [graphify, viewer, documentation]
+tags: \[graphify, viewer, documentation\]
 timestamp: 2026-08-20
 provenance: agent
 status: stable
@@ -18,9 +18,9 @@ graphify store. Read the spec first; operation matters day to day.
     Expand for Table of Contents
   </summary>
 
-- [1. Purpose](#1--purpose)
-- [2. Reading order](#2--reading-order)
-- [3. Children](#3--children)
+- [1. 🎯 Purpose](#1--purpose)
+- [2. 📚 Reading order](#2--reading-order)
+- [3. 📁 Children](#3--children)
 
 </details>
 
