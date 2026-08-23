@@ -78,4 +78,4 @@ It does not extract, merge, or modify graphs;
  the graphify CLI and the refresh script own that side.
 It listens on loopback only; Caddy is the sole TLS boundary.
 
-[←](02-spec.md) | [↑](#graphify-viewer-design) | [→](08-operation.md)
+[←](2402-spec.md) | [↑](#graphify-viewer-design) | [→](2408-operation.md)

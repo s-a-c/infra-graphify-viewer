@@ -34,17 +34,17 @@ Caddy.
 
 ## 2. 📚 Reading order
 
-1. [Spec](02-spec.md) — what the viewer is and why.
-2. [Design](04-design.md) — the shape of the solution and its boundaries.
-3. [Implementation](07-implementation.md) — files, endpoints, and how data flows.
-4. [Operation](08-operation.md) — running, refreshing, and troubleshooting.
+1. [Spec](2402-spec.md) — what the viewer is and why.
+2. [Design](2404-design.md) — the shape of the solution and its boundaries.
+3. [Implementation](2407-implementation.md) — files, endpoints, and how data flows.
+4. [Operation](2408-operation.md) — running, refreshing, and troubleshooting.
 
 ## 3. 📁 Children
 
-- [02-spec.md](02-spec.md) — the viewer's purpose, scope, and user-visible behavior.
-- [04-design.md](04-design.md) — architecture and the decisions behind it.
-- [08-operation.md](08-operation.md) — LaunchAgent, Caddy route, refresh loop, runbooks.
-- [07-implementation.md](07-implementation.md) — concrete file layout, endpoints, artifact resolution.
-- [98-index.md](98-index.md) — semantic index and glossary.
+- [02-spec.md](2402-spec.md) — the viewer's purpose, scope, and user-visible behavior.
+- [04-design.md](2404-design.md) — architecture and the decisions behind it.
+- [08-operation.md](2408-operation.md) — LaunchAgent, Caddy route, refresh loop, runbooks.
+- [07-implementation.md](2407-implementation.md) — concrete file layout, endpoints, artifact resolution.
+- [98-index.md](2498-index.md) — semantic index and glossary.
 
-[↑](#graphify-viewer-docs-contents) | [→](02-spec.md)
+[↑](#graphify-viewer-docs-contents) | [→](2402-spec.md)

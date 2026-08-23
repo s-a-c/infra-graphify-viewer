@@ -90,4 +90,4 @@ The viewer needs no restart after a refresh
 - Store: `~/.graphify/global-graph.json` + `global-manifest.json` (the
   manifest is the viewer's source of truth for tags and counts).
 
-[←](04-design.md) | [↑](#graphify-viewer-operation) | [→](07-implementation.md)
+[←](2404-design.md) | [↑](#graphify-viewer-operation) | [→](2407-implementation.md)

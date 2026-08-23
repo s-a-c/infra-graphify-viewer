@@ -83,7 +83,7 @@ reads serve the HTML artifacts as-is with their MIME types.
   `::1`.
 - Inventory: `~/docs/02-infra-repositories.md` (repo row, LaunchAgent rows,
   local-URL row).
-- Docs-site integration: see [98-index.md](98-index.md) and the home
+- Docs-site integration: see [98-index.md](2498-index.md) and the home
   workspace's docs-to-docs-site flow.
 
-[←](08-operation.md) | [↑](#graphify-viewer-implementation) | [→](98-index.md)
+[←](2408-operation.md) | [↑](#graphify-viewer-implementation) | [→](2498-index.md)

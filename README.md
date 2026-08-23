@@ -5,6 +5,6 @@ service serving a picker over the 12 tracked repo graphs plus their
 CLI-generated artifacts, behind central Caddy at
 `https://graphify.stands-macbook-pro.local/`.
 
-- Docs: [docs/01-contents.md](docs/01-contents.md)
-- Operation runbook: [docs/08-operation.md](docs/08-operation.md)
+- Docs: [docs/2401-contents.md](docs/2401-contents.md)
+- Operation runbook: [docs/2408-operation.md](docs/2408-operation.md)
 - Scope contract for agents: [AGENTS.md](AGENTS.md)
