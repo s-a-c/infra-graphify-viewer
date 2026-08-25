@@ -8,11 +8,15 @@
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const STORE_MANIFEST = resolve(process.env.HOME ?? "", ".graphify/global-manifest.json");
+const STORE_MANIFEST = resolve(process.env.GRAPHIFY_STORE_DIR ?? join(process.env.HOME ?? "", ".graphify"), "global-manifest.json");
+const GENERATIONS_DIR = resolve(process.env.GRAPHIFY_STORE_DIR ?? join(process.env.HOME ?? "", ".graphify"), "generations");
 const PORT = Number(process.env.GRAPHIFY_VIEWER_PORT ?? 4322);
 const HOST = "127.0.0.1";
+const SNAPSHOT_TTL_MS = 300_000; // 5 minutes
 
 // tag -> absolute dir containing graphify-out artifacts, derived from the
 // manifest's source_path (…/graphify-out/graph.json -> …/graphify-out).
@@ -31,6 +35,131 @@ function readStore() {
     };
   }
   return out;
+}
+
+// Read the current generation record for a tag. Returns null when missing.
+function readGeneration(tag) {
+  const genFile = join(GENERATIONS_DIR, tag, "current", "generation.json");
+  if (!existsSync(genFile)) return null;
+  try {
+    return JSON.parse(readFileSync(genFile, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// Get current HEAD for a repo path derived from the manifest.
+function getCurrentHead(storeEntry) {
+  try {
+    // storeEntry.dir is …/graphify-out; repo root is two levels up.
+    const repoRoot = resolve(storeEntry.dir, "..");
+    return execSync("git rev-parse HEAD", { cwd: repoRoot, encoding: "utf8" }).trim();
+  } catch {
+    return null;
+  }
+}
+
+// Check if working tree is dirty.
+function isWorkingTreeDirty(storeEntry) {
+  try {
+    const repoRoot = resolve(storeEntry.dir, "..");
+    const status = execSync("git status --porcelain", { cwd: repoRoot, encoding: "utf8" }).trim();
+    return status.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+const REQUIRED_ARTIFACTS = ["graph.json", "graph.html", "GRAPH_TREE.html", "GRAPH_REPORT.md"];
+
+// Compute status for a single managed item.
+function computeStatus(tag, storeEntry) {
+  const gen = readGeneration(tag);
+  const now = new Date().toISOString();
+  const item = { id: tag, label: tag };
+
+  // No generation at all → missing.
+  if (!gen) {
+    return {
+      item,
+      status: "missing",
+      reason: { code: "no_generation", message: "no generation record found" },
+      can_update: true,
+      update_scope: ["selected", "all"],
+      last_checked: now,
+      details: {},
+      job: null,
+    };
+  }
+
+  // Check required artifacts exist and are non-empty.
+  const missingArtifacts = REQUIRED_ARTIFACTS.filter(
+    (a) => !existsSync(join(storeEntry.dir, a)) || statSync(join(storeEntry.dir, a)).size === 0,
+  );
+  if (missingArtifacts.length > 0) {
+    return {
+      item,
+      status: "missing",
+      reason: {
+        code: "missing_artifacts",
+        message: `required artifacts absent: ${missingArtifacts.join(", ")}`,
+      },
+      generated: { kind: "commit", value: gen.head ?? "", observed_at: gen.observed_at ?? now },
+      can_update: true,
+      update_scope: ["selected", "all"],
+      last_checked: now,
+      details: { missing_artifacts: missingArtifacts },
+      job: null,
+    };
+  }
+
+  // Check HEAD alignment.
+  const currentHead = getCurrentHead(storeEntry);
+  const headMatches = currentHead && gen.head && currentHead === gen.head;
+
+  if (!headMatches) {
+    return {
+      item,
+      status: "stale",
+      reason: {
+        code: "head_mismatch",
+        message: currentHead
+          ? "repository HEAD has diverged from generated commit"
+          : "could not determine repository HEAD",
+      },
+      generated: { kind: "commit", value: gen.head ?? "", observed_at: gen.observed_at ?? now },
+      current: currentHead
+        ? { kind: "commit", value: currentHead, observed_at: now }
+        : undefined,
+      can_update: true,
+      update_scope: ["selected", "all"],
+      last_checked: now,
+      details: {},
+      job: null,
+    };
+  }
+
+  // HEAD matches — check dirty state.
+  const dirty = isWorkingTreeDirty(storeEntry);
+  const details = {};
+  if (dirty || gen.working_tree_dirty) {
+    details.working_tree_dirty = true;
+  }
+
+  return {
+    item,
+    status: "current",
+    generated: { kind: "commit", value: gen.head ?? "", observed_at: gen.observed_at ?? now },
+    current: { kind: "commit", value: currentHead ?? gen.head ?? "", observed_at: now },
+    can_update: true,
+    update_scope: ["selected", "all"],
+    last_checked: now,
+    details,
+    job: null,
+    ...(dirty || gen.working_tree_dirty
+      ? { reason: { code: "working_tree_dirty", message: "generated commit matches HEAD but working tree has uncommitted changes" } }
+      : {}),
+  };
 }
 
 const ARTIFACTS = [
@@ -126,6 +255,44 @@ Bun.serve({
     if (url.pathname === "/healthz") {
       const store = readStore();
       return Response.json({ ok: true, graphs: Object.keys(store).length });
+    }
+
+    // /api/status — status collection for all managed items.
+    if (url.pathname === "/api/status") {
+      const store = readStore();
+      const items = Object.entries(store).map(([tag, entry]) => computeStatus(tag, entry));
+      const snapshot = crypto.randomUUID();
+      return Response.json({
+        items,
+        update_scope: ["selected", "all"],
+        snapshot,
+        last_checked: new Date().toISOString(),
+      });
+    }
+
+    // /api/snapshot — opaque snapshot with TTL binding.
+    if (url.pathname === "/api/snapshot") {
+      const store = readStore();
+      const items = Object.entries(store).map(([tag, entry]) => computeStatus(tag, entry));
+      const snapshotId = crypto.randomUUID();
+      const observedAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + SNAPSHOT_TTL_MS).toISOString();
+      return Response.json({
+        snapshot: snapshotId,
+        observed_at: observedAt,
+        expires_at: expiresAt,
+        ttl_ms: SNAPSHOT_TTL_MS,
+        items: items.map((i) => ({
+          id: i.item.id,
+          label: i.item.label,
+          status: i.status,
+          reason: i.reason ?? null,
+          generated: i.generated ?? null,
+          current: i.current ?? null,
+          details: i.details ?? {},
+        })),
+        capabilities: { update_scope: ["selected", "all"] },
+      });
     }
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
