@@ -111,8 +111,8 @@ RESP=$(curl -s "http://127.0.0.1:$PORT/api/status")
 echo "$RESP" | python3 -c '
 import json,sys
 i = json.load(sys.stdin)["items"][0]
-assert i["status"]=="missing", f"expected missing got {i['status']}"
-assert i["reason"]["code"]=="no_generation"
+assert i["status"]=="unknown", f"expected unknown got {i['status']}"
+assert i["reason"]["code"]=="graphify/no_generation_record"
 ' && ok "missing: no_generation reason" || fail "missing: no_generation reason"
 stop_server "$PID"
 
@@ -127,7 +127,7 @@ echo "$RESP" | python3 -c '
 import json,sys
 i = json.load(sys.stdin)["items"][0]
 assert i["status"]=="missing"
-assert "missing_artifacts" in i["reason"]["code"]
+assert i["reason"]["code"]=="graphify/artifacts_missing"
 ' && ok "missing-art: reason is missing_artifacts" || fail "missing-art: reason is missing_artifacts"
 stop_server "$PID"
 
@@ -220,7 +220,7 @@ echo "$RESP" | python3 -c '
 import json,sys
 i = json.load(sys.stdin)["items"][0]
 assert i["status"]=="current", f"expected current got {i['status']}"
-assert i["reason"]["code"]=="working_tree_dirty"
+assert i["reason"]["code"]=="graphify/working_tree_dirty"
 assert i["details"].get("working_tree_dirty")==True
 ' && ok "dirty: current with working_tree_dirty warning" || fail "dirty: current with working_tree_dirty warning"
 stop_server "$PID"

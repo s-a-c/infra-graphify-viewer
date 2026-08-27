@@ -1,0 +1,57 @@
+/* Update controls, selection, and confirmation dialog for Graphify Viewer. */
+.update-controls {
+  display: flex; align-items: center; gap: .6rem;
+  margin: 0 0 1rem; flex-wrap: wrap;
+}
+.upd-btn {
+  font: inherit; font-size: .85rem; padding: .45rem .9rem;
+  border-radius: .55rem; border: 1px solid var(--surface2, #45475a);
+  background: var(--surface1, #313244); color: var(--text, #cdd6f4);
+  cursor: pointer;
+}
+.upd-btn:hover:not(:disabled) { border-color: var(--accent, #89b4fa); }
+.upd-btn:disabled { opacity: .5; cursor: not-allowed; }
+.upd-btn.primary { background: var(--accent, #89b4fa); color: #1e1e2e; }
+.upd-btn.subtle { border-style: dashed; }
+.upd-status { font-size: .8rem; color: var(--muted, #a6adc8); }
+
+.card-head { display: flex; align-items: center; gap: .5rem; }
+.card-head .tag { flex: 1; }
+.card .pick { accent-color: var(--accent, #89b4fa); width: 15px; height: 15px; cursor: pointer; }
+
+.status-badge {
+  font-size: .62rem; text-transform: uppercase; letter-spacing: .06em;
+  padding: .12rem .45rem; border-radius: .4rem;
+}
+.status-badge.ok    { background: #a6e3a1; color: #1e1e2e; }
+.status-badge.warn  { background: #f9e2af; color: #1e1e2e; }
+.status-badge.bad   { background: #f38ba8; color: #1e1e2e; }
+.status-badge.muted { background: #6c7086; color: #1e1e2e; }
+
+dialog#confirmDialog {
+  border: 1px solid var(--surface2, #45475a);
+  border-radius: .8rem; padding: 1.2rem 1.4rem;
+  background: var(--base, #1e1e2e); color: var(--text, #cdd6f4);
+  max-width: 26rem; width: 92vw;
+}
+dialog#confirmDialog::backdrop { background: rgba(0,0,0,.55); }
+dialog#confirmDialog h2 { margin: 0 0 .6rem; font-size: 1rem; }
+dialog#confirmDialog p { margin: 0 0 .5rem; font-size: .86rem; }
+dialog#confirmDialog ul {
+  margin: 0 0 .8rem; padding-left: 1.1rem;
+  font-size: .78rem; max-height: 9rem; overflow: auto;
+}
+dialog#confirmDialog li { margin-bottom: .18rem; }
+dialog#confirmDialog label.tok {
+  display: block; font-size: .78rem; margin-bottom: .8rem;
+}
+dialog#confirmDialog input[type="password"] {
+  margin-top: .25rem; width: 100%; box-sizing: border-box;
+  background: var(--surface0, #181825); color: var(--text, #cdd6f4);
+  border: 1px solid var(--surface2, #45475a); border-radius: .4rem;
+  padding: .4rem .5rem; font: inherit;
+}
+.dlg-actions { display: flex; justify-content: flex-end; gap: .5rem; }
+@media (prefers-reduced-motion: reduce) {
+  dialog#confirmDialog { transition: none; }
+}
