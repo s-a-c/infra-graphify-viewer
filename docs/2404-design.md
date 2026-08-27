@@ -78,4 +78,13 @@ It does not extract, merge, or modify graphs;
  the graphify CLI and the refresh script own that side.
 It listens on loopback only; Caddy is the sole TLS boundary.
 
+Mutation boundary: refresh jobs are the one write-adjacent surface. They run
+only the producer-owned script with fixed argv (selected `--tag`s plus a fixed
+`--timeout`; `--force` is unreachable from the browser), sit behind a
+service-local bearer token with Host/Origin checks, bind to a snapshot digest
+of observed statuses, enforce single-flight, and tail the producer's versioned
+JSONL for outcomes instead of parsing prose output. The producer's own lock
+covers overlap with nightly/manual runs; viewer jobs ending in failure,
+cancel, or timeout leave every prior generation untouched.
+
 [←](2402-spec.md) | [↑](#graphify-viewer-design) | [→](2408-operation.md)

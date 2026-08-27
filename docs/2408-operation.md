@@ -46,6 +46,8 @@ commit in jj, then kickstart the agent.
 
 ## 3. 🔄 Refresh loop
 
+### Scheduled and manual (unchanged)
+
 The store refreshes nightly at 02:30 via `com.s-a-c.graphify-refresh`
 (`~/infra/shared/scripts/graphify-refresh.sh`;
 - incremental, per-repo isolation).
@@ -55,6 +57,43 @@ The viewer needs no restart after a refresh
 ```bash
 ~/infra/shared/scripts/graphify-refresh.sh --force
 ```
+
+### Browser-triggered guarded refresh
+
+The picker adds per-card checkboxes plus **Update selected** / **Update all**
+controls. Both go through snapshot-bound confirmation:
+
+1. Paste the service token once in the confirm dialog (memory only — never
+   stored, never logged). Provision it server-side with:
+   ```bash
+   umask 177; mkdir -p ~/.config/graphify-viewer
+   printf '%s' "$(openssl rand -hex 32)" > ~/.config/graphify-viewer/token
+   ```
+2. Review the dialog's resolved labels, statuses, and reasons, then confirm.
+   The dialog fetches `GET /api/snapshot` and echoes its digest.
+3. Progress polls `GET /api/jobs/<id>` until a terminal state
+   (`completed` / `partial` / `failed` / `cancelled` / `timed_out` / `busy`).
+
+CLI equivalent for one tag:
+
+```bash
+TOKEN=$(cat ~/.config/graphify-viewer/token)
+SNAP=$(curl -s http://127.0.0.1:4322/api/snapshot | jq -r .snapshot)
+JOB=$(curl -s -X POST http://127.0.0.1:4322/api/jobs \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"operation":"refresh","scope":"selected","items":["shared"],"snapshot":"'"$SNAP"'","confirmed":true}' \
+  | jq -r .id)
+curl -s "http://127.0.0.1:4322/api/jobs/$JOB" | jq '{state, progress}'
+# cancel if needed:
+curl -s -X POST "http://127.0.0.1:4322/api/jobs/$JOB/cancel" -H "authorization: Bearer $TOKEN"
+```
+
+Rejection map: 403 disallowed Host/Origin · 401 missing/wrong token ·
+413 body over 64 KiB · 400 schema/scope/tag errors · 409 stale snapshot or
+active job · 422 unconfirmed. A `busy` job means the producer lock was held
+(nightly or manual run); wait and re-run with a fresh snapshot. Failed,
+cancelled, and timed-out jobs always preserve last-known generations — the
+picker keeps serving prior graphs.
 
 ## 4. ➕ Adding a graph
 

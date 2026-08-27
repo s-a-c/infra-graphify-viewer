@@ -40,16 +40,60 @@ infra/graphify-viewer/
 
 ## 2. 🛣 Endpoints
 
-| Route             | Method | Response                                             |
-| ----------------- | ------ | ---------------------------------------------------- |
-| `/`               | GET    | Picker page (server-rendered, `no-store`)            |
-| `/healthz`        | GET    | `{"ok":true,"graphs":N}`                             |
-| `/g/<tag>/graph`  | GET    | That repo's `graphify-out/graph.html`                |
-| `/g/<tag>/tree`   | GET    | That repo's `graphify-out/GRAPH_TREE.html`           |
-| `/g/<tag>/report` | GET    | `GRAPH_REPORT.md` wrapped in a minimal dark HTML pre |
-| anything else     | any    | 404                                                  |
+### Read surface (open, sanitized)
+
+| Route                | Method   | Response                                                    |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `/`                  | GET/HEAD | Picker page (server-rendered, `no-store`)                    |
+| `/healthz`           | GET      | `{"ok":true,"graphs":N}`                                     |
+| `/api/status`        | GET      | Status collection: typed items, snapshot digest, scope       |
+| `/api/status?id=TAG` | GET      | Single-item envelope (404 unknown tag)                       |
+| `/api/snapshot`      | GET      | Bound snapshot digest + TTL + observed items/capabilities    |
+| `/api/jobs`          | GET      | Bounded job history (latest 50)                              |
+| `/api/jobs/:id`      | GET      | Job detail: state, per-item outcomes, progress, capped output|
+| `/g/<tag>/graph`     | GET      | That repo's `graphify-out/graph.html`                        |
+| `/g/<tag>/tree`      | GET      | That repo's `graphify-out/GRAPH_TREE.html`                   |
+| `/g/<tag>/report`    | GET      | `GRAPH_REPORT.md` wrapped in a minimal dark HTML pre         |
+| anything else        | any      | 404                                                          |
 
 Environment: `GRAPHIFY_VIEWER_PORT` (default `4322`); binds `127.0.0.1` only.
+
+### Mutation surface (bearer token)
+
+| Route                   | Method | Body                                                                 | Response |
+| ----------------------- | ------ | -------------------------------------------------------------------- | -------- |
+| `/api/jobs`             | POST   | `{operation:"refresh",scope:"selected"|"all",items,snapshot,confirmed}` | 202 job envelope |
+| `/api/jobs/:id/cancel`  | POST   | —                                                                    | 200 ack; idempotent |
+
+Guards run in order before any producer work: Host-header allowlist (generic
+403), Origin/Referer defense-in-depth, bearer token (`WWW-Authenticate` on
+401), 64 KiB body cap (413), strict schema (400), snapshot digest binding
+(409 with fresh collection when stale), `confirmed:true` (422 otherwise).
+One active job: a second POST returns 409 naming the running id.
+
+Token sources (first match wins): `GRAPHIFY_VIEWER_TOKEN` env, else
+`~/.config/graphify-viewer/token`. The token never appears in responses,
+logs, or URLs. Test seam: `createApp(options)` builds the app in-process;
+fixture suites drive it without sockets.
+
+## 2.1 🧱 Job engine
+
+Jobs spawn the producer-owned `graphify-refresh.sh` (selected tags become
+`--tag` pairs; `--timeout` is fixed server-side; clients can never pass
+`--force`). Per-tag outcomes come from the producer's versioned
+`graphify-refresh-result/v1` JSONL (tailed by byte offset):
+
+- `updated` → updated · `skipped` / `tolerated_empty` → skipped
+- `cancelled` → cancelled · `timed_out` → timed_out
+- `busy` (producer lock) → pollable whole-job `busy`
+- everything else → failed
+
+Aggregate states: `running` → one of `completed`, `partial`, `failed`,
+`cancelled`, `timed_out`, `busy`. Watchdog escalates SIGTERM→SIGKILL (5 s
+grace) against the process group at the 15-minute deadline; cancel is the
+same escalation, authenticated and idempotent. Output is captured to 1 MiB
+(head+tail preserved); history is process-local and capped at 50 jobs.
+Last-known generations are never touched by viewer mutations.
 
 ## 3. 🎨 Picker rendering
 

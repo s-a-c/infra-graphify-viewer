@@ -28,6 +28,8 @@ status: stable
 - adding a graph — [runbook](2408-operation.md#4--adding-a-graph)
 - architecture — [service overview](2404-design.md#1--architecture)
 - artifact routes — [endpoint table](2407-implementation.md#2--endpoints)
+- guarded refresh jobs — [job engine](2407-implementation.md#21--job-engine), [browser-triggered refresh](2408-operation.md#3--refresh-loop)
+- snapshot-bound confirmation — [mutation surface](2407-implementation.md#2--endpoints)
 - Bun path — [troubleshooting](2408-operation.md#5--troubleshooting)
 - calendar filter — [spec](2402-spec.md#4--user-visible-behavior)
 - Caddy — [route and restart procedure](2408-operation.md#5--troubleshooting)

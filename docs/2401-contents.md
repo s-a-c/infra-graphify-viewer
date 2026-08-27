@@ -36,7 +36,7 @@ Caddy.
 
 1. [Spec](2402-spec.md) — what the viewer is and why.
 2. [Design](2404-design.md) — the shape of the solution and its boundaries.
-3. [Implementation](2407-implementation.md) — files, endpoints, and how data flows.
+3. [Implementation](2407-implementation.md) — files, endpoints, job engine, and how data flows.
 4. [Operation](2408-operation.md) — running, refreshing, and troubleshooting.
 
 ## 3. 📁 Children
