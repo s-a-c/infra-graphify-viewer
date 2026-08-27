@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "graphify_viewer",
+  "project_id": "85b9cdc5-f251-4ddd-b797-5da59e6a6b8a"
+}
