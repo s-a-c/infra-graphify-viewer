@@ -11,42 +11,8 @@ import { createApp } from "../server.js";
 
 const ROOT = await mkdtemp(join(tmpdir(), "gv-jobs-"));
 
-const FRESH_SCRIPT = join(ROOT, "fake-refresh.sh");
-await writeFile(FRESH_SCRIPT, `#!/usr/bin/env bash
-set -u
-behavior=""
-[ -f "\${FAKE_BEHAVIOR_FILE:-}" ] && behavior=\$(cat "\$FAKE_BEHAVIOR_FILE")
-mkdir -p "\${GRAPHIFY_STORE_DIR}/results"
-out="\${GRAPHIFY_STORE_DIR}/results/graphify-refresh-results.jsonl"
-
-tags=()
-args=("$@")
-i=0
-while [ \$i -lt \${#args[@]} ]; do
-  if [ "\${args[\$i]}" = "--tag" ]; then tags+=("\${args[\$((i+1))]}"); i=\$((i+2)); else i=\$((i+1)); fi
-done
-if [ \${#tags[@]} -eq 0 ]; then
-  IFS=',' read -ra tags <<< "\${FAKE_ALL_TAGS:-}"
-fi
-
-if [ "\$behavior" = "busy" ]; then
-  printf '{"schema":"graphify-refresh-result/v1","tag":"-","outcome":"busy","generation_id":null,"message":"refresh lock held by pid 12345","head":null,"working_tree_dirty":false,"content_fingerprint":null,"observed_at":"2026-08-27T00:00:00Z"}\\n' >>"\$out"
-  echo "producer busy" >&2
-  exit 2
-fi
-
-for tag in "\${tags[@]}"; do
-  printf '{"schema":"graphify-refresh-result/v1","tag":"%s","outcome":"updated","generation_id":"gen-%s-1","message":"generation published","head":"abc123","working_tree_dirty":false,"content_fingerprint":"fp","observed_at":"2026-08-27T00:00:00Z"}\\n' "\$tag" "\$tag" >>"\$out"
-done
-
-if [ "\$behavior" = "hang" ]; then
-  trap 'exit 143' TERM
-  sleep 28800 &
-  wait \$!
-fi
-exit 0
-`);
-spawnSync("chmod", ["+x", FRESH_SCRIPT]);
+// Fixture producer: behavior-switchable, base64 payload events (no nesting).
+const FRESH_SCRIPT = join(import.meta.dir, "fixtures", "fake-refresh.sh");
 
 async function makeRepo(storeDir, tag, opts = {}) {
   const repoRoot = join(storeDir, "repos", tag);
