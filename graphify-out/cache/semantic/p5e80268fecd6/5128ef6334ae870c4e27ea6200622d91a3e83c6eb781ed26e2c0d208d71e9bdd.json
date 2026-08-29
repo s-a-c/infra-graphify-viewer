@@ -1,0 +1,1 @@
+{"nodes": [{"id": "job_engine", "label": "Job Engine", "file_type": "concept", "source_file": "docs/2407-implementation.md", "rationale": "Manages background refresh processes and tracks their state via JSONL tailing."}], "edges": [], "hyperedges": []}

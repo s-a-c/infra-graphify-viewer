@@ -1,0 +1,1 @@
+{"nodes": [{"id": "caddy", "label": "Central Caddy", "file_type": "concept", "source_file": "docs/2404-design.md", "rationale": "Terminates TLS and proxies traffic to the Bun service."}], "edges": [], "hyperedges": []}

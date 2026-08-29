@@ -1,0 +1,248 @@
+{
+  "communities": {
+    "0": [
+      "server_createapp",
+      "server_createjobregistry",
+      "server_homepath",
+      "server_resolveoptions",
+      "tests_e2e_journeys_test",
+      "tests_e2e_journeys_test_assertnopaths",
+      "tests_e2e_journeys_test_build",
+      "tests_e2e_journeys_test_home_markers",
+      "tests_e2e_journeys_test_jsonof",
+      "tests_e2e_journeys_test_producer",
+      "tests_e2e_journeys_test_req",
+      "tests_jobs_api_test",
+      "tests_jobs_api_test_buildfixture",
+      "tests_jobs_api_test_fresh_script",
+      "tests_jobs_api_test_makegeneration",
+      "tests_jobs_api_test_makemanifest",
+      "tests_jobs_api_test_makerepo",
+      "tests_jobs_api_test_req"
+    ],
+    "1": [
+      "public",
+      "public_applytheme",
+      "public_artifacts",
+      "public_calbtn",
+      "public_calpop",
+      "public_closecal",
+      "public_datesofvisible",
+      "public_drawcal",
+      "public_isoof",
+      "public_oncalpick",
+      "public_opencal",
+      "public_render",
+      "public_segbuttons",
+      "public_state",
+      "public_syncsortui",
+      "public_wire"
+    ],
+    "2": [
+      "server",
+      "server_artifacts",
+      "server_computeitemstatus",
+      "server_githead",
+      "server_gitworkingtreedirty",
+      "server_here",
+      "server_mime",
+      "server_port",
+      "server_readgeneration",
+      "server_reporootfor",
+      "server_required_artifacts"
+    ],
+    "3": [
+      "server_appendoutput",
+      "server_applyeventtojob",
+      "server_bytelengthoffile",
+      "server_computeaggregatestate",
+      "server_mapresultoutcome",
+      "server_randomjobid",
+      "server_readresultstail",
+      "server_redacttext",
+      "server_startjob",
+      "server_startjob_job",
+      "server_startjob_job_cancelfn"
+    ],
+    "4": [
+      "server_computestatuscollection",
+      "server_createapp_app",
+      "server_createapp_publiccollection",
+      "server_handlejobpost",
+      "server_jsonresponse",
+      "server_readjsonbody",
+      "server_readstore",
+      "server_readtoken",
+      "server_scopeall",
+      "server_viewjob"
+    ],
+    "5": [
+      "tests_test_status_api",
+      "tests_test_status_api_cleanup",
+      "tests_test_status_api_create_fixture",
+      "tests_test_status_api_fail",
+      "tests_test_status_api_finish",
+      "tests_test_status_api_next_port",
+      "tests_test_status_api_ok",
+      "tests_test_status_api_sh__entry",
+      "tests_test_status_api_start_server",
+      "tests_test_status_api_stop_server"
+    ],
+    "6": [
+      "public_updates",
+      "public_updates_openconfirm",
+      "public_updates_paintstatuses",
+      "public_updates_polljob",
+      "public_updates_refreshbuttons",
+      "public_updates_selectedtags",
+      "public_updates_setbadge",
+      "public_updates_startjob"
+    ],
+    "7": [
+      "server_authgate",
+      "server_errorresponse",
+      "server_parseurlsafe",
+      "server_unauthorized"
+    ],
+    "8": [
+      "server_esc",
+      "server_pickercontrolsmarkup",
+      "server_renderindex",
+      "server_statusbadge"
+    ],
+    "9": [
+      "tests_fixtures_fake_refresh",
+      "tests_fixtures_fake_refresh_sh__entry"
+    ],
+    "10": [
+      "agents_md"
+    ],
+    "11": [
+      "caddy"
+    ],
+    "12": [
+      "job_engine"
+    ],
+    "13": [
+      "prototype_picker_prototype_html"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1437908496732026,
+    "1": 0.175,
+    "2": 0.2545454545454545,
+    "3": 0.18181818181818182,
+    "4": 0.3333333333333333,
+    "5": 0.35555555555555557,
+    "6": 0.5,
+    "7": 0.5,
+    "8": 0.6666666666666666,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0
+  },
+  "gods": [
+    {
+      "id": "server_createapp_app",
+      "label": "app()",
+      "degree": 15
+    },
+    {
+      "id": "server_handlejobpost",
+      "label": "handleJobPost()",
+      "degree": 11
+    },
+    {
+      "id": "server_startjob",
+      "label": "startJob()",
+      "degree": 9
+    },
+    {
+      "id": "server_createapp",
+      "label": "createApp()",
+      "degree": 9
+    },
+    {
+      "id": "tests_test_status_api_sh__entry",
+      "label": "test-status-api.sh script",
+      "degree": 8
+    },
+    {
+      "id": "server_computeitemstatus",
+      "label": "computeItemStatus()",
+      "degree": 6
+    },
+    {
+      "id": "server_computestatuscollection",
+      "label": "computeStatusCollection()",
+      "degree": 6
+    },
+    {
+      "id": "server_authgate",
+      "label": "authGate()",
+      "degree": 6
+    },
+    {
+      "id": "public_updates_paintstatuses",
+      "label": "paintStatuses()",
+      "degree": 5
+    },
+    {
+      "id": "public_drawcal",
+      "label": "drawCal()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "req()",
+      "target": "app()",
+      "source_files": [
+        "tests/e2e-journeys.test.js",
+        "server.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `req()` unexpectedly reaches hub `app()`"
+    },
+    {
+      "source": "req()",
+      "target": "app()",
+      "source_files": [
+        "tests/jobs-api.test.js",
+        "server.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `req()` unexpectedly reaches hub `app()`"
+    },
+    {
+      "source": "build()",
+      "target": "createApp()",
+      "source_files": [
+        "tests/e2e-journeys.test.js",
+        "server.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `build()` unexpectedly reaches hub `createApp()`"
+    },
+    {
+      "source": "buildFixture()",
+      "target": "createApp()",
+      "source_files": [
+        "tests/jobs-api.test.js",
+        "server.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 19332,
+    "output": 1469
+  }
+}

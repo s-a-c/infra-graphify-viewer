@@ -1,0 +1,74 @@
+{
+  ".beads/metadata.json": {
+    "mtime": 1787725220.9858434,
+    "seen": 1787917252.317107,
+    "ast_hash": "44189b2b48be5ae713163eb1b4051272",
+    "semantic_hash": "44189b2b48be5ae713163eb1b4051272"
+  },
+  "public-updates.js": {
+    "mtime": 1787809138.3807056,
+    "seen": 1787917252.31711,
+    "ast_hash": "8c7e721738a471d74f562e3d739395da",
+    "semantic_hash": "8c7e721738a471d74f562e3d739395da"
+  },
+  "public.js": {
+    "mtime": 1787186783.4324398,
+    "seen": 1787917252.317111,
+    "ast_hash": "bed5e561f9b6c55d8fcb414b90b818b0",
+    "semantic_hash": "bed5e561f9b6c55d8fcb414b90b818b0"
+  },
+  "server.js": {
+    "mtime": 1787809138.381442,
+    "seen": 1787917252.317112,
+    "ast_hash": "65e816855b042de6cde6988f1d98ebb4",
+    "semantic_hash": "65e816855b042de6cde6988f1d98ebb4"
+  },
+  "tests/e2e-journeys.test.js": {
+    "mtime": 1787809138.3817194,
+    "seen": 1787917252.317112,
+    "ast_hash": "9ccd3656af53d36af1cb83a5e451b74f",
+    "semantic_hash": "9ccd3656af53d36af1cb83a5e451b74f"
+  },
+  "tests/fixtures/fake-refresh.sh": {
+    "mtime": 1787809138.3819177,
+    "seen": 1787917252.3171132,
+    "ast_hash": "522140b480c9419d879f821f621c8ad2",
+    "semantic_hash": "522140b480c9419d879f821f621c8ad2"
+  },
+  "tests/jobs-api.test.js": {
+    "mtime": 1787809138.3820643,
+    "seen": 1787917252.3171132,
+    "ast_hash": "988c62526c6ad892115186a684e3f0fa",
+    "semantic_hash": "988c62526c6ad892115186a684e3f0fa"
+  },
+  "tests/test-status-api.sh": {
+    "mtime": 1787809138.3822675,
+    "seen": 1787917252.317114,
+    "ast_hash": "b14ca4524ea2cf921f2353c3da075bbe",
+    "semantic_hash": "b14ca4524ea2cf921f2353c3da075bbe"
+  },
+  "AGENTS.md": {
+    "mtime": 1787204108.713681,
+    "seen": 1787917252.317114,
+    "ast_hash": "e0efdaf99cedae739207d97de39323b8",
+    "semantic_hash": "e0efdaf99cedae739207d97de39323b8"
+  },
+  "docs/2404-design.md": {
+    "mtime": 1787809138.379688,
+    "seen": 1787917252.3171148,
+    "ast_hash": "ae65d23bbe59bbc9fd86158c38110893",
+    "semantic_hash": "ae65d23bbe59bbc9fd86158c38110893"
+  },
+  "docs/2407-implementation.md": {
+    "mtime": 1787809138.3799555,
+    "seen": 1787917252.3171148,
+    "ast_hash": "a4f5a16a774d6afca929526853e05dc9",
+    "semantic_hash": "a4f5a16a774d6afca929526853e05dc9"
+  },
+  "prototype/picker-prototype.html": {
+    "mtime": 1787186617.4812596,
+    "seen": 1787917252.317116,
+    "ast_hash": "d50a094e6cedf3ca33989a42398bcbe2",
+    "semantic_hash": "d50a094e6cedf3ca33989a42398bcbe2"
+  }
+}
