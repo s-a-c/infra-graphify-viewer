@@ -24,6 +24,11 @@
       headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
     }),
+    update: (payload, token) => fetch("/api/update", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    }),
   };
 
   function selectedTags() {
@@ -83,8 +88,8 @@
     tokenInput.value = "";
     try {
       const snap = await api.snapshot();
-      const res = await api.post("/api/jobs", {
-        operation: "refresh",
+      const res = await api.update({
+        operation: "update",
         scope,
         items: tags,
         snapshot: snap.snapshot,
@@ -92,9 +97,9 @@
       }, token);
       const body = await res.json().catch(() => ({}));
       if (res.status === 202) {
-        activeJobId = body.id;
+        activeJobId = body.job_id;
         updCancel.hidden = false;
-        updStatus.textContent = `job ${body.id.slice(0, 8)} started`;
+        updStatus.textContent = `job ${body.job_id.slice(0, 8)} started`;
         pollTimer = setInterval(pollJob, 900);
         paintStatuses();
       } else if (res.status === 409 && body.snapshot) {
@@ -116,7 +121,7 @@
       if (!res.ok) return;
       const job = await res.json();
       updStatus.textContent =
-        `${job.state} ${job.progress.completed}/${job.progress.total}`;
+        `${job.state} ${job.progress.succeeded}/${job.progress.total}`;
       if (!["queued", "running"].includes(job.state)) {
         clearInterval(pollTimer);
         pollTimer = null;

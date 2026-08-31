@@ -87,7 +87,7 @@ echo "$RESP" | grep -q '"last_checked"' && ok "status: has last_checked" || fail
 echo "$RESP" | python3 -c '
 import json,sys
 i = json.load(sys.stdin)["items"][0]
-for k in ("item","status","can_update","update_scope","last_checked","details","job"):
+for k in ("item","status","can_update","update_scope","last_checked","details"):
     assert k in i, f"missing {k}"
 assert i["item"]["id"] and i["item"]["label"], "empty id/label"
 assert i["status"] in ("current","stale","missing","failed","unknown"), f"bad status {i['status']}"
@@ -144,8 +144,9 @@ for k in ("snapshot","observed_at","expires_at","ttl_ms","items","capabilities")
     assert k in s, f"missing {k}"
 assert len(s["items"])==1
 i = s["items"][0]
-for k in ("id","label","status","reason","generated","current","details"):
+for k in ("item","status","reason","generated","current","details"):
     assert k in i, f"item missing {k}"
+assert "id" in i["item"] and "label" in i["item"], "item identity missing"
 ' && ok "snapshot: structure valid" || fail "snapshot: structure valid"
 stop_server "$PID"
 

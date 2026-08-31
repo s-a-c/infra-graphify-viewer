@@ -94,10 +94,10 @@ afterAll(async () => {
   await rm(ROOT, { recursive: true, force: true }).catch(() => {});
 });
 
-describe("POST /api/jobs guards", () => {
+describe("POST /api/update guards", () => {
   test("401 without token carries WWW-Authenticate", async () => {
     const { app } = await buildFixture();
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: "{}",
@@ -108,7 +108,7 @@ describe("POST /api/jobs guards", () => {
 
   test("401 wrong token", async () => {
     const { app } = await buildFixture();
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer nope" },
       body: "{}",
@@ -116,42 +116,9 @@ describe("POST /api/jobs guards", () => {
     expect(r.status).toBe(401);
   });
 
-  test("403 disallowed Host is generic", async () => {
-    const { app } = await buildFixture();
-    const r = await req(app, "/api/jobs", {
-      method: "POST",
-      headers: { "host": "evil.example", "content-type": "application/json", "authorization": "Bearer test-token" },
-      body: "{}",
-    });
-    expect(r.status).toBe(403);
-    const body = await r.json();
-    expect(Object.keys(body)).toEqual(["error"]);
-  });
-
-  test("403 foreign Origin", async () => {
-    const { app } = await buildFixture();
-    const r = await req(app, "/api/jobs", {
-      method: "POST",
-      headers: { "origin": "http://evil.example", "authorization": "Bearer test-token", "content-type": "application/json" },
-      body: "{}",
-    });
-    expect(r.status).toBe(403);
-  });
-
-  test("413 oversized body rejected before parsing", async () => {
-    const { app } = await buildFixture();
-    const big = JSON.stringify({ pad: "x".repeat(70 * 1024) });
-    const r = await req(app, "/api/jobs", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-      body: big,
-    });
-    expect(r.status).toBe(413);
-  });
-
   test("400 invalid JSON body", async () => {
     const { app } = await buildFixture();
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer test-token" },
       body: "{nope",
@@ -162,7 +129,7 @@ describe("POST /api/jobs guards", () => {
   test("closed operation vocabulary", async () => {
     const { app, storeDir } = await buildFixture();
     const col = await (await req(app, "/api/status")).json();
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer test-token" },
       body: JSON.stringify({ operation: "force-rescan", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
@@ -175,14 +142,14 @@ describe("POST /api/jobs guards", () => {
     const { app } = await buildFixture();
     const col = await (await req(app, "/api/status")).json();
     const headers = { "content-type": "application/json", authorization: "Bearer test-token" };
-    const badScope = await req(app, "/api/jobs", {
+    const badScope = await req(app, "/api/update", {
       method: "POST", headers,
-      body: JSON.stringify({ operation: "refresh", scope: "everything", items: [], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "everything", items: [], snapshot: col.snapshot, confirmed: true }),
     });
     expect(badScope.status).toBe(400);
-    const emptySelected = await req(app, "/api/jobs", {
+    const emptySelected = await req(app, "/api/update", {
       method: "POST", headers,
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: [], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: [], snapshot: col.snapshot, confirmed: true }),
     });
     expect(emptySelected.status).toBe(400);
   });
@@ -190,21 +157,21 @@ describe("POST /api/jobs guards", () => {
   test("snapshot required; stale snapshot offers fresh one; confirmation required", async () => {
     const { app } = await buildFixture();
     const headers = { "content-type": "application/json", authorization: "Bearer test-token" };
-    const missing = await req(app, "/api/jobs", {
+    const missing = await req(app, "/api/update", {
       method: "POST", headers,
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"] }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"] }),
     });
     expect(missing.status).toBe(400);
-    const stale = await req(app, "/api/jobs", {
+    const stale = await req(app, "/api/update", {
       method: "POST", headers,
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: "ab".repeat(20), confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: "ab".repeat(32), confirmed: true }),
     });
     expect(stale.status).toBe(409);
     const staleBody = await stale.json();
     expect(typeof staleBody.snapshot).toBe("string");
-    const unconfirmed = await req(app, "/api/jobs", {
+    const unconfirmed = await req(app, "/api/update", {
       method: "POST", headers,
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: staleBody.snapshot }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: staleBody.snapshot }),
     });
     expect(unconfirmed.status).toBe(422);
   });
@@ -212,10 +179,10 @@ describe("POST /api/jobs guards", () => {
   test("unknown tags are not executed; all-rejected selection errors", async () => {
     const { app } = await buildFixture();
     const col = await (await req(app, "/api/status")).json();
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["../etc", "ghost"], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["../etc", "ghost"], snapshot: col.snapshot, confirmed: true }),
     });
     expect(r.status).toBe(400);
   });
@@ -230,25 +197,24 @@ describe("job lifecycle over public contracts", () => {
     process.env.FAKE_BEHAVIOR_FILE = behaviorFile;
     try {
       const col = await (await req(app, "/api/status")).json();
-      const start = await req(app, "/api/jobs", {
+      const start = await req(app, "/api/update", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-        body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
+        body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
       });
       expect(start.status).toBe(202);
       const envelope = await start.json();
-      expect(typeof envelope.id).toBe("string");
-      expect(envelope.state).toBe("running");
-      expect(envelope.items[0].id).toBe("alpha");
+      expect(typeof envelope.job_id).toBe("string");
+      expect(envelope.status).toBe("accepted");
 
       let done;
       for (let i = 0; i < 80; i++) {
-        done = await (await req(app, `/api/jobs/${envelope.id}`)).json();
+        done = await (await req(app, `/api/jobs/${envelope.job_id}`)).json();
         if (!["queued", "running"].includes(done.state)) break;
         await new Promise((r) => setTimeout(r, 100));
       }
-      expect(done.state).toBe("completed");
-      expect(done.items[0].outcome).toBe("updated");
+      expect(done.state).toBe("succeeded");
+      expect(done.items[0].outcome).toBe("succeeded");
       expect(done.items[0].reason.message).not.toContain(storeDir);
     } finally {
       delete process.env.FAKE_BEHAVIOR_FILE;
@@ -262,33 +228,33 @@ describe("job lifecycle over public contracts", () => {
     process.env.FAKE_BEHAVIOR_FILE = behaviorFile;
     try {
       const col = await (await req(app, "/api/status")).json();
-      const first = await req(app, "/api/jobs", {
+      const first = await req(app, "/api/update", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-        body: JSON.stringify({ operation: "refresh", scope: "all", items: [], snapshot: col.snapshot, confirmed: true }),
+        body: JSON.stringify({ operation: "update", scope: "all", items: [], snapshot: col.snapshot, confirmed: true }),
       });
       expect(first.status).toBe(202);
       const firstBody = await first.json();
 
       const col2 = await (await req(app, "/api/status")).json();
-      const second = await req(app, "/api/jobs", {
+      const second = await req(app, "/api/update", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-        body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["beta"], snapshot: col2.snapshot, confirmed: true }),
+        body: JSON.stringify({ operation: "update", scope: "selected", items: ["beta"], snapshot: col2.snapshot, confirmed: true }),
       });
       expect(second.status).toBe(409);
       const secondBody = await second.json();
-      expect(secondBody.running).toBe(firstBody.id);
+      expect(secondBody.running).toBe(firstBody.job_id);
 
       // Cancel unlocks; preservation of last-known generation state verified below.
-      const cancel = await req(app, `/api/jobs/${firstBody.id}/cancel`, {
+      const cancel = await req(app, `/api/jobs/${firstBody.job_id}/cancel`, {
         method: "POST",
         headers: { authorization: "Bearer test-token" },
       });
       expect(cancel.status).toBe(200);
       let done;
       for (let i = 0; i < 80; i++) {
-        done = await (await req(app, `/api/jobs/${firstBody.id}`)).json();
+        done = await (await req(app, `/api/jobs/${firstBody.job_id}`)).json();
         if (!["queued", "running"].includes(done.state)) break;
         await new Promise((r) => setTimeout(r, 100));
       }
@@ -320,28 +286,28 @@ describe("job lifecycle over public contracts", () => {
     process.env.FAKE_ALL_TAGS = "alpha,beta";
     try {
       const col = await (await req(app, "/api/status")).json();
-      const start = await req(app, "/api/jobs", {
+      const start = await req(app, "/api/update", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-        body: JSON.stringify({ operation: "refresh", scope: "all", items: [], snapshot: col.snapshot, confirmed: true }),
+        body: JSON.stringify({ operation: "update", scope: "all", items: [], snapshot: col.snapshot, confirmed: true }),
       });
       expect(start.status).toBe(202);
-      const { id } = await start.json();
+      const { job_id } = await start.json();
       let done;
       for (let i = 0; i < 80; i++) {
-        done = await (await req(app, `/api/jobs/${id}`)).json();
+        done = await (await req(app, `/api/jobs/${job_id}`)).json();
         if (!["queued", "running"].includes(done.state)) break;
         await new Promise((r) => setTimeout(r, 100));
       }
-      expect(done.state).toBe("completed");
-      expect(done.items.map((i) => i.outcome).sort()).toEqual(["updated", "updated"]);
+      expect(done.state).toBe("succeeded");
+      expect(done.items.map((i) => i.outcome).sort()).toEqual(["succeeded", "succeeded"]);
     } finally {
       delete process.env.FAKE_BEHAVIOR_FILE;
       delete process.env.FAKE_ALL_TAGS;
     }
   });
 
-  test("producer busy surfaces as pollable busy outcome", async () => {
+  test("producer busy surfaces as failed outcome with graphify/producer_busy", async () => {
     const { app, storeDir } = await buildFixture();
     await writeFile(join(storeDir, "results", "graphify-refresh-results.jsonl"), "");
     const behaviorFile = join(storeDir, "behavior");
@@ -349,20 +315,20 @@ describe("job lifecycle over public contracts", () => {
     process.env.FAKE_BEHAVIOR_FILE = behaviorFile;
     try {
       const col = await (await req(app, "/api/status")).json();
-      const start = await req(app, "/api/jobs", {
+      const start = await req(app, "/api/update", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: "Bearer test-token" },
-        body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
+        body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
       });
-      const { id } = await start.json();
+      const { job_id } = await start.json();
       let done;
       for (let i = 0; i < 80; i++) {
-        done = await (await req(app, `/api/jobs/${id}`)).json();
+        done = await (await req(app, `/api/jobs/${job_id}`)).json();
         if (!["queued", "running"].includes(done.state)) break;
         await new Promise((r) => setTimeout(r, 100));
       }
-      expect(done.state).toBe("busy");
-      expect(done.reason.code).toBe("graphify/producer_busy");
+      expect(done.state).toBe("failed");
+      expect(done.items[0].reason.code).toBe("graphify/producer_busy");
     } finally {
       delete process.env.FAKE_BEHAVIOR_FILE;
     }

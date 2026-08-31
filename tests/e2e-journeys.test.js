@@ -104,20 +104,20 @@ describe("journey: guarded selected update completes end-to-end", () => {
   test("confirm -> poll -> completed with stale-reject after real drift", async () => {
     const { app, alphaRepoRoot, storeDir: storeDirState } = await build();
     const col = await jsonOf(await req(app, "/api/status"));
-    const start = await req(app, "/api/jobs", {
+    const start = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
     });
     expect(start.status).toBe(202);
     const job = await jsonOf(start);
     let done;
-    for (let i = 0; i < 80 && !done?.state?.match(/^(completed|partial|failed|cancelled|timed_out|busy)$/); i++) {
+    for (let i = 0; i < 80 && !done?.state?.match(/^(succeeded|partial|failed|cancelled|timed_out)$/); i++) {
       await new Promise((r) => setTimeout(r, 100));
-      done = await jsonOf(await req(app, `/api/jobs/${job.id}`));
+      done = await jsonOf(await req(app, `/api/jobs/${job.job_id}`));
     }
-    expect(done.state).toBe("completed");
-    expect(done.items[0].outcome).toBe("updated");
+    expect(done.state).toBe("succeeded");
+    expect(done.items[0].outcome).toBe("succeeded");
     assertNoPaths(JSON.stringify(done), "completed job payload");
 
     // stale confirmation is refused with a fresh snapshot offered: advance the
@@ -125,10 +125,10 @@ describe("journey: guarded selected update completes end-to-end", () => {
     await writeFile(join(alphaRepoRoot, "graphify-out", "new.txt"), "x");
     spawnSync("git", ["add", "-A"], { cwd: alphaRepoRoot });
     spawnSync("git", ["commit", "-q", "-m", "advance"], { cwd: alphaRepoRoot });
-    const stale = await req(app, "/api/jobs", {
+    const stale = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
     });
     expect(stale.status).toBe(409);
     const staleBody = await jsonOf(stale);
@@ -141,32 +141,36 @@ describe("journey: rejection paths are safe", () => {
   test("browser without token cannot start updates; wrong token too", async () => {
     const { app } = await build();
     const snap = await jsonOf(await req(app, "/api/snapshot"));
-    const payload = JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: snap.snapshot, confirmed: true });
-    const anon = await req(app, "/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: payload });
+    const payload = JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: snap.snapshot, confirmed: true });
+    const anon = await req(app, "/api/update", { method: "POST", headers: { "content-type": "application/json" }, body: payload });
     expect(anon.status).toBe(401);
     expect(anon.headers.get("www-authenticate")).toContain("Bearer");
-    const bad = await req(app, "/api/jobs", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer tok-nope" }, body: payload });
+    const bad = await req(app, "/api/update", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer tok-nope" }, body: payload });
     expect(bad.status).toBe(401);
   });
 
   test("unconfirmed submission stops at 422 even with valid snapshot+token", async () => {
     const { app } = await build();
     const snap = await jsonOf(await req(app, "/api/snapshot"));
-    const r = await req(app, "/api/jobs", {
+    const r = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: snap.snapshot }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: snap.snapshot }),
     });
     expect(r.status).toBe(422);
   });
 
   test("disallowed Host header gets generic 403 before auth", async () => {
     const { app } = await build();
-    const r = await req(app, "/api/jobs", {
+    // Kernel boundary guards check the request URL hostname (which the server
+    // derives from the Host the browser sent). Forge a foreign host by building
+    // the Request with an external URL.
+    const reqUrl = "http://evil.example/api/update";
+    const r = await app(new Request(reqUrl, {
       method: "POST",
       headers: { host: "evil.example", "content-type": "application/json", authorization: "Bearer tok-123" },
       body: "{}",
-    });
+    }));
     expect(r.status).toBe(403);
     const body = await jsonOf(r);
     expect(Object.keys(body)).toEqual(["error"]);
@@ -178,16 +182,16 @@ describe("journey: partial failure, busy, cancel, retry", () => {
     const { app, behaviorFile } = await build();
     await writeFile(behaviorFile, "failall");
     const col = await jsonOf(await req(app, "/api/status"));
-    const start = await req(app, "/api/jobs", {
+    const start = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["alpha"], snapshot: col.snapshot, confirmed: true }),
     });
-    const { id } = await jsonOf(start);
+    const { job_id } = await jsonOf(start);
     let done;
     for (let i = 0; i < 80; i++) {
       await new Promise((r) => setTimeout(r, 100));
-      done = await jsonOf(await req(app, `/api/jobs/${id}`));
+      done = await jsonOf(await req(app, `/api/jobs/${job_id}`));
       if (!["running", "queued"].includes(done.state)) break;
     }
     expect(done.state).toBe("failed");
@@ -202,18 +206,18 @@ describe("journey: partial failure, busy, cancel, retry", () => {
     await writeFile(behaviorFile, "hang");
     const col = await jsonOf(await req(app, "/api/status"));
     const snap = await jsonOf(await req(app, "/api/snapshot"));
-    const start = await req(app, "/api/jobs", {
+    const start = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["beta"], snapshot: snap.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["beta"], snapshot: snap.snapshot, confirmed: true }),
     });
-    const { id } = await jsonOf(start);
-    const cancel = await req(app, `/api/jobs/${id}/cancel`, { method: "POST", headers: { authorization: "Bearer tok-123" } });
+    const { job_id } = await jsonOf(start);
+    const cancel = await req(app, `/api/jobs/${job_id}/cancel`, { method: "POST", headers: { authorization: "Bearer tok-123" } });
     expect(cancel.status).toBe(200);
     let done;
     for (let i = 0; i < 80; i++) {
       await new Promise((r) => setTimeout(r, 100));
-      done = await jsonOf(await req(app, `/api/jobs/${id}`));
+      done = await jsonOf(await req(app, `/api/jobs/${job_id}`));
       if (!["running", "queued"].includes(done.state)) break;
     }
     expect(done.state).toBe("cancelled");
@@ -221,10 +225,10 @@ describe("journey: partial failure, busy, cancel, retry", () => {
     await writeFile(behaviorFile, "");
     const col2 = await jsonOf(await req(app, "/api/status"));
     void col2;
-    const again = await req(app, "/api/jobs", {
+    const again = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "selected", items: ["beta"], snapshot: (await jsonOf(await req(app, "/api/snapshot"))).snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "selected", items: ["beta"], snapshot: (await jsonOf(await req(app, "/api/snapshot"))).snapshot, confirmed: true }),
     });
     expect(again.status).toBe(202);
     expect(req !== undefined).toBe(true);
@@ -232,23 +236,24 @@ describe("journey: partial failure, busy, cancel, retry", () => {
     void behaviorFile;
   });
 
-  test("producer busy shows pollable busy outcome", async () => {
+  test("producer busy shows pollable failed outcome with graphify/producer_busy reason", async () => {
     const { app, behaviorFile } = await build();
     await writeFile(behaviorFile, "busy");
     const snap = await jsonOf(await req(app, "/api/snapshot"));
-    const start = await req(app, "/api/jobs", {
+    const start = await req(app, "/api/update", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer tok-123" },
-      body: JSON.stringify({ operation: "refresh", scope: "all", items: [], snapshot: snap.snapshot, confirmed: true }),
+      body: JSON.stringify({ operation: "update", scope: "all", items: [], snapshot: snap.snapshot, confirmed: true }),
     });
-    const { id } = await jsonOf(start);
+    const { job_id } = await jsonOf(start);
     let done;
     for (let i = 0; i < 80; i++) {
       await new Promise((r) => setTimeout(r, 100));
-      done = await jsonOf(await req(app, `/api/jobs/${id}`));
+      done = await jsonOf(await req(app, `/api/jobs/${job_id}`));
       if (!["running", "queued"].includes(done.state)) break;
     }
-    expect(done.state).toBe("busy");
+    expect(done.state).toBe("failed");
+    expect(done.items[0].reason.code).toBe("graphify/producer_busy");
   });
 });
 
