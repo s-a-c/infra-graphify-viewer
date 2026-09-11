@@ -9,6 +9,7 @@ status: stable
 ---
 # Graphify Viewer operation
 
+<!-- generated-toc -->
 <details>
   <summary style="font-size: 1.25em; font-weight: bold; margin: 0.83em 0; cursor: pointer;">
     Expand for Table of Contents
@@ -17,6 +18,8 @@ status: stable
 - [1. 🌐 Access](#1--access)
 - [2. 🔌 Service lifecycle](#2--service-lifecycle)
 - [3. 🔄 Refresh loop](#3--refresh-loop)
+  - [3.1. 📄 Scheduled and manual (unchanged)](#31--scheduled-and-manual-unchanged)
+  - [3.2. 📄 Browser-triggered guarded refresh](#32--browser-triggered-guarded-refresh)
 - [4. ➕ Adding a graph](#4--adding-a-graph)
 - [5. 🔧 Troubleshooting](#5--troubleshooting)
 - [6. 📋 Logs and state](#6--logs-and-state)
@@ -24,7 +27,6 @@ status: stable
 </details>
 
 ---
-
 ## 1. 🌐 Access
 
 `https://graphify.stands-macbook-pro.local/` (central Caddy, `tls internal`).
@@ -46,7 +48,7 @@ commit in jj, then kickstart the agent.
 
 ## 3. 🔄 Refresh loop
 
-### Scheduled and manual (unchanged)
+### 3.1. 📄 Scheduled and manual (unchanged)
 
 The store refreshes nightly at 02:30 via `com.s-a-c.graphify-refresh`
 (`~/infra/shared/scripts/graphify-refresh.sh`;
@@ -58,7 +60,7 @@ The viewer needs no restart after a refresh
 ~/infra/shared/scripts/graphify-refresh.sh --force
 ```
 
-### Browser-triggered guarded refresh
+### 3.2. 📄 Browser-triggered guarded refresh
 
 The picker adds per-card checkboxes plus **Update selected** / **Update all**
 controls. Both go through snapshot-bound confirmation:

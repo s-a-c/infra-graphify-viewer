@@ -9,6 +9,7 @@ status: stable
 ---
 # Graphify Viewer index
 
+<!-- generated-toc -->
 <details>
   <summary style="font-size: 1.25em; font-weight: bold; margin: 0.83em 0; cursor: pointer;">
     Expand for Table of Contents
@@ -20,15 +21,14 @@ status: stable
 </details>
 
 ---
-
 ## 1. 🧭 Topic index
 
-- 3D cards — [design boundaries and degradation](2404-design.md#2--decisions), [implementation of registered properties](2407-implementation.md#3--picker-rendering)
+- 3D cards — [design boundaries and degradation](2404-design.md#2--decisions), [implementation of registered properties](2407-implementation.md#4--picker-rendering)
 - accessibility — [palette and contrast requirements](2402-spec.md#4--user-visible-behavior)
 - adding a graph — [runbook](2408-operation.md#4--adding-a-graph)
 - architecture — [service overview](2404-design.md#1--architecture)
 - artifact routes — [endpoint table](2407-implementation.md#2--endpoints)
-- guarded refresh jobs — [job engine](2407-implementation.md#21--job-engine), [browser-triggered refresh](2408-operation.md#3--refresh-loop)
+- guarded refresh jobs — [job engine](2407-implementation.md#3-1--job-engine), [browser-triggered refresh](2408-operation.md#3--refresh-loop)
 - snapshot-bound confirmation — [mutation surface](2407-implementation.md#2--endpoints)
 - Bun path — [troubleshooting](2408-operation.md#5--troubleshooting)
 - calendar filter — [spec](2402-spec.md#4--user-visible-behavior)

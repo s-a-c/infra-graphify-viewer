@@ -9,9 +9,6 @@ status: stable
 ---
 # Graphify Viewer docs contents
 
-Documentation for the Graphify Viewer, the centralized browser for the global
-graphify store. Read the spec first; operation matters day to day.
-
 <!-- generated-toc -->
 <details>
   <summary style="font-size: 1.25em; font-weight: bold; margin: 0.83em 0; cursor: pointer;">
@@ -25,6 +22,9 @@ graphify store. Read the spec first; operation matters day to day.
 </details>
 
 ---
+Documentation for the Graphify Viewer, the centralized browser for the global
+graphify store. Read the spec first; operation matters day to day.
+
 
 ## 1. 🎯 Purpose
 

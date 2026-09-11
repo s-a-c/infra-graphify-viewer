@@ -9,6 +9,7 @@ status: stable
 ---
 # Graphify Viewer design
 
+<!-- generated-toc -->
 <details>
   <summary style="font-size: 1.25em; font-weight: bold; margin: 0.83em 0; cursor: pointer;">
     Expand for Table of Contents
@@ -22,7 +23,6 @@ status: stable
 </details>
 
 ---
-
 ## 1. 🏗 Architecture
 
 A single Bun HTTP service (`server.js`, zero npm dependencies) renders the

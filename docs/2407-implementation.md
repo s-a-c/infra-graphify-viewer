@@ -9,6 +9,7 @@ status: stable
 ---
 # Graphify Viewer implementation
 
+<!-- generated-toc -->
 <details>
   <summary style="font-size: 1.25em; font-weight: bold; margin: 0.83em 0; cursor: pointer;">
     Expand for Table of Contents
@@ -16,14 +17,16 @@ status: stable
 
 - [1. 📁 Repository layout](#1--repository-layout)
 - [2. 🛣 Endpoints](#2--endpoints)
-- [3. 🎨 Picker rendering](#3--picker-rendering)
-- [4. 🔗 Artifact resolution](#4--artifact-resolution)
-- [5. 🧩 Registration surface](#5--registration-surface)
+  - [2.1. 📄 Read surface (open, sanitized)](#21--read-surface-open-sanitized)
+  - [2.2. 📄 Mutation surface (bearer token)](#22--mutation-surface-bearer-token)
+- [3. 1 🧱 Job engine](#3-1--job-engine)
+- [4. 🎨 Picker rendering](#4--picker-rendering)
+- [5. 🔗 Artifact resolution](#5--artifact-resolution)
+- [6. 🧩 Registration surface](#6--registration-surface)
 
 </details>
 
 ---
-
 ## 1. 📁 Repository layout
 
 ```text
@@ -40,7 +43,7 @@ infra/graphify-viewer/
 
 ## 2. 🛣 Endpoints
 
-### Read surface (open, sanitized)
+### 2.1. 📄 Read surface (open, sanitized)
 
 | Route                | Method   | Response                                                    |
 | -------------------- | -------- | ------------------------------------------------------------ |
@@ -58,7 +61,7 @@ infra/graphify-viewer/
 
 Environment: `GRAPHIFY_VIEWER_PORT` (default `4322`); binds `127.0.0.1` only.
 
-### Mutation surface (bearer token)
+### 2.2. 📄 Mutation surface (bearer token)
 
 | Route                   | Method | Body                                                                 | Response |
 | ----------------------- | ------ | -------------------------------------------------------------------- | -------- |
@@ -76,7 +79,7 @@ Token sources (first match wins): `GRAPHIFY_VIEWER_TOKEN` env, else
 logs, or URLs. Test seam: `createApp(options)` builds the app in-process;
 fixture suites drive it without sockets.
 
-## 2.1 🧱 Job engine
+## 3. 1 🧱 Job engine
 
 Jobs spawn the producer-owned `graphify-refresh.sh` (selected tags become
 `--tag` pairs; `--timeout` is fixed server-side; clients can never pass
@@ -95,7 +98,7 @@ same escalation, authenticated and idempotent. Output is captured to 1 MiB
 (head+tail preserved); history is process-local and capped at 50 jobs.
 Last-known generations are never touched by viewer mutations.
 
-## 3. 🎨 Picker rendering
+## 4. 🎨 Picker rendering
 
 `renderIndex()` in `server.js` reads the manifest, checks which artifacts
 exist per tag (chips render only for present files), and emits the page with
@@ -109,7 +112,7 @@ The 3D treatment uses CSS custom properties registered with `@property`
 smoothly; engines without `@property` support degrade to static depth.
 `prefers-reduced-motion` disables float and shake.
 
-## 4. 🔗 Artifact resolution
+## 5. 🔗 Artifact resolution
 
 Tags map to directories via the manifest's `source_path`
 (`…/graphify-out/graph.json` → the containing `graphify-out/`). The server
@@ -117,7 +120,7 @@ reads the artifact from disk per request — no caching layer, so regenerated
 artifacts serve immediately. Markdown is HTML-escaped and wrapped; binary-safe
 reads serve the HTML artifacts as-is with their MIME types.
 
-## 5. 🧩 Registration surface
+## 6. 🧩 Registration surface
 
 - LaunchAgent: `com.s-a-c.graphify-viewer`
   (`~/.local/bin/launch-graphify-viewer.sh`, execs
